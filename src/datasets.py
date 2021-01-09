@@ -3,21 +3,7 @@ import numpy as np
 from abc import ABC
 
 
-NEVP_2019_09_10_bindings = {"catalog_number":  "catalogNumber", # this functions as the primary key
-                                "url": "originalurl",
-                                "sci_name": "scientificName",
-                                "family": "family",
-                                "order": None,
-                                "inst": "institutionCode",
-                                "object_id": "occid",
-                                "state": "stateProvince",
-                                "event_date": "eventDate",
-                                "year": "year",
-                                "county": "county",
-                                "municipality": "municipality",
-                                "locality": "locality",
-                                "latitude": "decimalLatitude",
-                                "longitue": "decimalLongitude"}
+
 
 """
 Each dataset is related to an original master_dataset. One Dataset object can have multiple scorings associated with it, but only one master_dataset. 
@@ -26,7 +12,7 @@ This module makes no use of streamlit utilities
 """
 class Dataset:
 
-    def __init__(self, label_map: dict = None):
+    def __init__(self, label_map: dict = {}):
         self.master_df = None
 
         # we will rename every column to these standardized names
@@ -57,8 +43,6 @@ class Dataset:
 
     
 
-
-    
     def load_orders(self, order_csv_path, head_label = True):
         """
         populates the 'order' field of self.master_df using a csv mapping families to orders
@@ -107,9 +91,11 @@ class Dataset:
 
 
         def substitute(value):
-            if value == "True":
+#             print(type(value))
+#             print(value)
+            if value == "True" or value == True:
                 return False
-            elif value == 'False':
+            elif value == 'False' or value == False:
                 return True
             elif np.isnan(value):
                 return(np.nan)
@@ -182,6 +168,45 @@ class Dataset:
             return_status_list.append(f"{status} Prediction Confidence")
         return pred_df[return_status_list]
 
+   
+      
+    @staticmethod
+    def parse_name(name) -> str:
+#         if name[0] in {'1','2','3','4','5','6','7','8','9'}:
+#             #print("entered starting with number")
+#             if len(name) == 7:
+#                 return "barcode-0"+name, name, int(name)
+#             if len(name) == 6:
+#                 return "barcode-00"+name, name, int(name)
+        if name[0:4] == "ECON":
+            partial = name[-7:]
+            if partial[0] == '0':
+                return "barcode-00"+name[-6:]
+            else:
+                return "barcode-0"+name[-7:]
+#         if name[0:2] == "00":
+#             print("barcode-"+name)
+#             return "barcode-"+name
+        if name[0:3] == "CBS":
+            return "CBS." + name[3:9]
+        if name[0:3] == "GH0":
+            return "barcode-"+name[2:]
+        if name[0:4] == "NEBC":
+            partial = "barcode-0"+name[-7:]
+            if partial[0] == "0":
+                return "barcode-00"+partial[1:]
+            else: 
+                return partial
+        if name[0:2] == "A0":
+            partial = "barcode-0"+name[-7:]
+            if partial[0] == "0":
+                return "barcode-00"+partial[1:]
+            else: 
+                return partial
+        if name[0:3] == "YU0":
+            return "YU." + name[2:8]
+        return name
+
 
     def merge_preds_gt(self, preds_df, gt_df):
         """
@@ -190,14 +215,25 @@ class Dataset:
 
         """
         merge_preds_gt_df = preds_df.join(gt_df, how='inner')
-
-        # join with master is trickier because of unstandardized catalogNumbers on master
+        merge_preds_gt_df['catalog_number'] = merge_preds_gt_df.index
+        merge_preds_gt_df['catalog_number'] = merge_preds_gt_df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
+        merge_preds_gt_df.set_index('catalog_number', inplace=True)
+        # display(merge_preds_gt_df)
+        self.master_df.join(merge_preds_gt_df, how="left")
+        # display(merge_preds_gt_df)
+        # print(len(self.master_df))
+        unmatched_preds = list(merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)])
+        # print(unmatched_preds[:min(len(unmatched_preds), 10)])
+        # print(len(unmatched_preds))
         
+        # retry unmatched_preds
+        retry = [pred_catalog_number for pred_catalog_number in unmatched_preds if len(pred_catalog_number) == 8]
+        # print(retry)
+        merge_preds_gt_df['retry_catalog_number'] = merge_preds_gt_df[merge_preds_gt_df.index.isin(retry)].apply(lambda x: str(x[2:]))
+        merge_preds_gt_df.set_index('retry_catalog_number', inplace=True)
+        # display(merge_preds_gt_df.head(10))
         
-
-
-
-
-
-
-
+        self.master_df.join(merge_preds_gt_df, how="inner")
+        unmatched_preds = list(merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)])
+        # print(unmatched_preds[:min(len(unmatched_preds), 10)])
+        # print(len(unmatched_preds))
