@@ -1,0 +1,7 @@
+The taxa were all drawn from the NEVP (Mobilizing New England Vascular Plant Specimen Data to Track Environmental Change). This was an NSF funded project whose aim was to digitize over 1 million specimens and score a subset for reproductive phenology. This was a collaborative award and the lead institution was Yale Peabody Museum (PI was Patrick Sweeney, Co-PI was Michael Donoghue).  The scorings in Dataset 1 were produced as part of the project, and large portions of the digitized specimens in Dataset 1, 2, and 3 were generated as part of this project.
+
+| Dataset |  Filename | Date | Size | Description | Schema |
+| - | - | - | - | - | - |
+| Dataset 1 | NEVP_2019_09_10.csv | 2019-09-10 | ?| The original training dataset (a small set taxa targeted), which was scored by humans. The validation is used in this system | NEVP |
+| Dataset 2 | NEVP_phenology_unscored_20191206.csv | 2019-12-06 | ? |  query results of the CNH portal database for un-scored specimens (with an image) representing the taxa in Dataset 1| CNH |
+| Dataset 3 | ALL_families_2020-03-31.csv | 2020-03-31 | ? |  query results* of the CNH portal database for un-scored specimens from northeastern North America that were not part of Dataset 1 or 2, excludes families that are potentially likely to be difficult for the models to handle due to their having flowers that are obscure (i.e., they lack petals & sepals or have vestigial structures). | CNH |
