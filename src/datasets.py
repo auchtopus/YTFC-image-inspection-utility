@@ -1,15 +1,50 @@
-import pandas as pd
-import numpy as np
+from typing import List, Tuple
 from abc import ABC
 
-
-
+import pandas as pd
+import numpy as np
+from sklearn.metrics import f1_score, precision_score, recall_score
+import streamlit as st
 
 """
 Each dataset is related to an original master_dataset. One Dataset object can have multiple scorings associated with it, but only one master_dataset. 
 
 This module makes no use of streamlit utilities
 """
+
+
+
+
+class Metric:
+
+    @staticmethod
+    def accuracy(df: pd.DataFrame, status: str) -> float:
+        return len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df)
+
+    @staticmethod
+    def f1_score(df: pd.DataFrame, status: str) -> float:
+        return f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+
+    @staticmethod
+    def precision_score(df: pd.DataFrame, status: str) -> float:
+        return precision_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+
+    @staticmethod
+    def recall_score(df: pd.DataFrame, status: str) -> float:
+        return recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+
+    @staticmethod
+    def percentage_positive(df: pd.DataFrame, status: str) -> float:
+        return len(df[df[f'{status} Ground Truth'] == True])/len(df)
+
+    @staticmethod
+    def percentage_negative(df: pd.DataFrame, status: str) -> float:
+        return len(df[df[f'{status} Ground Truth'] == False])/len(df)
+
+    
+
+
+
 class Dataset:
 
     def __init__(self, label_map: dict = {}):
@@ -34,6 +69,7 @@ class Dataset:
         self.order_map = {}
         self.status_list = ['Budding', 'Flowering', 'Fruiting' ,'Reproductive']
 
+    @st.cache
     def load_master_dataset(self, csv_path):
         self.master_df = pd.read_csv(csv_path)
         self.master_df.rename(columns = {v:k for k,v in self.label_map.items()},inplace=True)
@@ -66,7 +102,9 @@ class Dataset:
         self.master_df['order'] = self.master_df['family'].apply(lambda family_name: self.order_map[family_name])
 
 
-    def load_gt(self, ground_truth_file, status_list):
+    @staticmethod
+    @st.cache
+    def load_gt(ground_truth_file, status_list):
         """
         Generates the ground truth from a scoring csv
         
@@ -113,9 +151,9 @@ class Dataset:
         gt_status_list = [f"{status} Ground Truth" for status in status_list]
         return ground_truth_df[gt_status_list]
     
-
-
-    def load_preds(self, pred_csv_path, status_list, binarized = False):
+    @staticmethod
+    @st.cache
+    def load_preds(pred_csv_path, status_list, binarized = False):
         """
         Loads the predictions from pred_csv_path, binarizes the data, reindexes to catalog_number
 
@@ -168,8 +206,6 @@ class Dataset:
             return_status_list.append(f"{status} Prediction Confidence")
         return pred_df[return_status_list]
 
-   
-      
     @staticmethod
     def parse_name(name) -> str:
 #         if name[0] in {'1','2','3','4','5','6','7','8','9'}:
@@ -207,12 +243,10 @@ class Dataset:
             return "YU." + name[2:8]
         return name
 
-
+    @st.cache
     def merge_preds_gt(self, preds_df, gt_df):
         """
         Merges predictions and ground truth with self.master_df
-
-
         """
         merge_preds_gt_df = preds_df.join(gt_df, how='inner')
         merge_preds_gt_df['catalog_number'] = merge_preds_gt_df.index
@@ -233,7 +267,26 @@ class Dataset:
         merge_preds_gt_df.set_index('retry_catalog_number', inplace=True)
         # display(merge_preds_gt_df.head(10))
         
-        self.master_df.join(merge_preds_gt_df, how="inner")
+        self.master_df.join(merge_preds_gt_df, how="left")
         unmatched_preds = list(merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)])
         # print(unmatched_preds[:min(len(unmatched_preds), 10)])
         # print(len(unmatched_preds))
+
+    @staticmethod
+    def threshold_single(df: pd.DataFrame, status: str, threshold: float, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame:
+        df_filter = df[df[f'{status} Prediction Confidence'] >= threshold]
+        metric_dict = {}
+        for metric, params in metrics:
+            metric_name, metric_value = metric(df_filter, **params)
+            metric_dict[metric_name] = metric_value
+        return metric_dict
+
+    @staticmethod
+    def threshold_range(df: pd.DataFrame, status: str, thresh_range: np.linspace, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame: # what happens if you pass an empty dict/
+        metric_list = []
+        for thresh in thresh_range:
+            metric_list.append(Dataset.threshold_single(df, status, thresh, metrics))
+        return pd.DataFrame.from_records(metric_list, index = thresh_range)
+
+
+
