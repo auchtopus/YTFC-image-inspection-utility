@@ -9,13 +9,21 @@ import streamlit as st
 """
 Each dataset is related to an original master_dataset. One Dataset object can have multiple scorings associated with it, but only one master_dataset. 
 
-This module makes no use of streamlit utilities
 """
 
 
 
 
 class Metric:
+
+    # these should take cropped dataframes
+    @staticmethod
+    def count_samples(df: pd.DataFrame, status: str) -> int:
+        return len(df[f"{status} Prediction"])
+
+    @staticmethod
+    def capture(df: pd.DataFrame, status: str, original_length: int) -> float:
+        return Metric.count_samples(df, status)/original_length
 
     @staticmethod
     def accuracy(df: pd.DataFrame, status: str) -> float:
@@ -34,12 +42,19 @@ class Metric:
         return recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
 
     @staticmethod
-    def percentage_positive(df: pd.DataFrame, status: str) -> float:
-        return len(df[df[f'{status} Ground Truth'] == True])/len(df)
+    def percentage_valence(df: pd.DataFrame, status: str, valence: bool) -> float:
+        return len(df[df[f'{status} Ground Truth'] == valence])/len(df)
 
     @staticmethod
-    def percentage_negative(df: pd.DataFrame, status: str) -> float:
-        return len(df[df[f'{status} Ground Truth'] == False])/len(df)
+    def pred_type_percentage(df: pd.DataFrame, status: str, pred_valence: bool, gt_valence: bool) -> float:
+        """
+        Compute percentages of true positive, false positive, true negative, false negative
+        """
+        return len(df[(df[f'{status} Prediction'] == pred_valence) & (df[f'{status} Ground Truth'] == gt_valence)])/len(df)
+
+    full_analysis = {}
+
+    
 
     
 
@@ -69,7 +84,6 @@ class Dataset:
         self.order_map = {}
         self.status_list = ['Budding', 'Flowering', 'Fruiting' ,'Reproductive']
 
-    @st.cache
     def load_master_dataset(self, csv_path):
         self.master_df = pd.read_csv(csv_path)
         self.master_df.rename(columns = {v:k for k,v in self.label_map.items()},inplace=True)
@@ -93,13 +107,20 @@ class Dataset:
 
 
         """
+        def match_order(family_name):
+            try:
+                return self.order_map[family_name]
+            except KeyError:
+                return '__Other'
+
+
         if head_label:
             mapping_df = pd.read_csv(order_csv_path)
         else:
             mapping_df = pd.read_csv(order_csv_path, names=['Family', 'Order'])
 
         self.order_map = dict(zip(list(mapping_df['Family']), list(mapping_df['Order'])))
-        self.master_df['order'] = self.master_df['family'].apply(lambda family_name: self.order_map[family_name])
+        self.master_df['order'] = self.master_df['family'].apply(lambda family_name: match_order(family_name))
 
 
     @staticmethod
@@ -243,32 +264,53 @@ class Dataset:
             return "YU." + name[2:8]
         return name
 
-    @st.cache
+
+    # maybe st.cache needs to be applied to methods to return?
+
     def merge_preds_gt(self, preds_df, gt_df):
         """
         Merges predictions and ground truth with self.master_df
+
+
         """
         merge_preds_gt_df = preds_df.join(gt_df, how='inner')
         merge_preds_gt_df['catalog_number'] = merge_preds_gt_df.index
         merge_preds_gt_df['catalog_number'] = merge_preds_gt_df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
         merge_preds_gt_df.set_index('catalog_number', inplace=True)
         # display(merge_preds_gt_df)
-        self.master_df.join(merge_preds_gt_df, how="left")
+        self.master_df = self.master_df.join(merge_preds_gt_df, how="left")
         # display(merge_preds_gt_df)
-        # print(len(self.master_df))
-        unmatched_preds = list(merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)])
-        # print(unmatched_preds[:min(len(unmatched_preds), 10)])
-        # print(len(unmatched_preds))
+        # print(f"master len: {len(self.master_df)}")
+
+
+
+
+        unmatched_preds = merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)].index
+        # print(f" unmathched 1: {unmatched_preds}")
+        # print(f" unmatched len 1: {len(unmatched_preds)}")
         
         # retry unmatched_preds
         retry = [pred_catalog_number for pred_catalog_number in unmatched_preds if len(pred_catalog_number) == 8]
-        # print(retry)
-        merge_preds_gt_df['retry_catalog_number'] = merge_preds_gt_df[merge_preds_gt_df.index.isin(retry)].apply(lambda x: str(x[2:]))
-        merge_preds_gt_df.set_index('retry_catalog_number', inplace=True)
-        # display(merge_preds_gt_df.head(10))
+        # print(f" retry catalog numbers: {retry}")
+
         
-        self.master_df.join(merge_preds_gt_df, how="left")
-        unmatched_preds = list(merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)])
+        # print("selected from retry")
+        retry_df= merge_preds_gt_df[merge_preds_gt_df.index.isin(retry)]
+        retry_df['retry_catalog_number'] = [x[2:] for x in retry_df.index]
+        retry_df.set_index('retry_catalog_number', inplace=True)
+        # retry_df.drop(['retry_catalog_number'])
+        # print("display the retry")
+        # display(retry_df.head(10))
+
+        # print("checking retry presence")
+        # display(self.master_df.loc[self.master_df.index.isin(retry_df.index)])
+        # print("length of retry join")
+        # print(len(self.master_df.loc[self.master_df.index.isin(retry_df.index)]))
+        
+        self.master_df.fillna(retry_df, inplace=True)
+        # unmatched_preds = retry_df[~retry_df.index.isin(self.master_df.index)].index
+        # print("retry")
+        # display(self.master_df[self.master_df.index.isin(retry_df.index)].head(10))
         # print(unmatched_preds[:min(len(unmatched_preds), 10)])
         # print(len(unmatched_preds))
 
