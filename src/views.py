@@ -68,7 +68,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
         mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
-        st.write(f"base_filter: {Counter(mask)}")
+        # st.write(f"base_filter: {Counter(mask)}")
 
         # check for status
         if query['status'] != "All" and len(query['status']) > 0:
@@ -79,21 +79,32 @@ class Dataview(Dataset): #TODO determine where to put queries
             mask = (mask) & (self.master_df[f"{query['status']} Prediction"].notnull())
             print(Counter(self.master_df[f"{query['status']} Prediction"].notnull()))
             print(mask)
-            st.write(f"status_filter: {Counter(mask)}")
+            # st.write(f"status_filter: {Counter(mask)}")
 
-        st.write(f"status_filter: {Counter(mask)}")
+
+        original_length = Counter(mask)[True]
+
+        # st.write(f"status_filter: {Counter(mask)}")
 
         if query['family'] != ['All Families'] and len(query['family'])> 0:
             mask = (mask) & (self.master_df["family"].isin(query["family"]))
             print(self.master_df["family"].isin(query["family"]))
             print(Counter(self.master_df["family"].isin(query["family"])))
         print(type(mask))
-        st.write(f"family_filter: {Counter(mask)}")
+        # st.write(f"family_filter: {Counter(mask)}")
         if query['order'] != ['All Orders'] and len(query['order']) > 0:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
-        st.write(f"order_filter: {Counter(mask)}")
+        # st.write(f"order_filter: {Counter(mask)}")
 
-        
+        if query['status'] != "All":
+            # we can do a summary
+            full_analysis = [(Metric.capture, {"status": query['status'], "original_length": original_length}),
+                             (Metric.accuracy, {"status": query['status']})]
+
+            metric_df = self.threshold_range(self.master_df[mask], query['status'], np.linspace(0.5, 1, 25,False), full_analysis)
+            st.dataframe(metric_df)
+            st.line_chart(metric_df)
+
 
 
 
