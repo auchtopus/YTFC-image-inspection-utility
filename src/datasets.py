@@ -18,20 +18,21 @@ class Metric:
 
     # these should take cropped dataframes
     @staticmethod
-    def count_samples(df: pd.DataFrame, status: str) -> int:
-        return len(df[f"{status} Prediction"])
+    def count_samples(df: pd.DataFrame, status: str) -> Tuple[str, int]:
+        return "Number of Samples", len(df[f"{status} Prediction"])
 
     @staticmethod
-    def capture(df: pd.DataFrame, status: str, original_length: int) -> float:
-        return Metric.count_samples(df, status)/original_length
+    def capture(df: pd.DataFrame, status: str, original_length: int) -> Tuple[str, float]:
+        return "Capture", Metric.count_samples(df, status)[1]/original_length
 
     @staticmethod
-    def accuracy(df: pd.DataFrame, status: str) -> float:
-        return len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df)
+    def accuracy(df: pd.DataFrame, status: str) -> Tuple[str, float]:
+        print(len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]]), len(df))
+        return "Accuracy", len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df)
 
     @staticmethod
-    def f1_score(df: pd.DataFrame, status: str) -> float:
-        return f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+    def f1_score(df: pd.DataFrame, status: str) -> Tuple[str, float]:
+        return "F1 score", f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
 
     @staticmethod
     def precision_score(df: pd.DataFrame, status: str) -> float:
@@ -52,7 +53,7 @@ class Metric:
         """
         return len(df[(df[f'{status} Prediction'] == pred_valence) & (df[f'{status} Ground Truth'] == gt_valence)])/len(df)
 
-    full_analysis = {}
+
 
     
 
@@ -153,9 +154,9 @@ class Dataset:
 #             print(type(value))
 #             print(value)
             if value == "True" or value == True:
-                return False
-            elif value == 'False' or value == False:
                 return True
+            elif value == 'False' or value == False:
+                return False
             elif np.isnan(value):
                 return(np.nan)
             else:
@@ -327,6 +328,7 @@ class Dataset:
     def threshold_range(df: pd.DataFrame, status: str, thresh_range: np.linspace, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame: # what happens if you pass an empty dict/
         metric_list = []
         for thresh in thresh_range:
+            print(thresh)
             metric_list.append(Dataset.threshold_single(df, status, thresh, metrics))
         return pd.DataFrame.from_records(metric_list, index = thresh_range)
 
