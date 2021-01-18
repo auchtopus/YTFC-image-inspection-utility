@@ -19,39 +19,70 @@ class Metric:
     # these should take cropped dataframes
     @staticmethod
     def count_samples(df: pd.DataFrame, status: str) -> Tuple[str, int]:
-        return "Number of Samples", len(df[f"{status} Prediction"])
+        return f"{status} Number of Samples", len(df[f"{status} Prediction"])
 
     @staticmethod
     def capture(df: pd.DataFrame, status: str, original_length: int) -> Tuple[str, float]:
-        return "Capture", Metric.count_samples(df, status)[1]/original_length
+        try:
+            return f"{status} Capture", Metric.count_samples(df, status)[1]/original_length
+        except ZeroDivisionError:
+            return f"{status} Capture", 0
 
     @staticmethod
     def accuracy(df: pd.DataFrame, status: str) -> Tuple[str, float]:
-        print(len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]]), len(df))
-        return "Accuracy", len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df)
+        # print(len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]]), len(df))
+        try:
+            return f"{status} Accuracy", len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df[f"{status} Ground Truth"].notnull())
+        except ZeroDivisionError:
+            return f"{status} Accuracy", 1 # 
 
     @staticmethod
-    def f1_score(df: pd.DataFrame, status: str) -> Tuple[str, float]:
-        return "F1 score", f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+    def f1(df: pd.DataFrame, status: str) -> Tuple[str, float]:
+        return f"{status} F1", f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
     @staticmethod
-    def precision_score(df: pd.DataFrame, status: str) -> float:
-        return precision_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+    def precision(df: pd.DataFrame, status: str) -> Tuple[str,float]:
+        return f"{status} Precision", precision_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
     @staticmethod
-    def recall_score(df: pd.DataFrame, status: str) -> float:
-        return recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0)
+    def recall(df: pd.DataFrame, status: str) -> Tuple[str,float]:
+        return f"{status} Recall", recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
     @staticmethod
-    def percentage_valence(df: pd.DataFrame, status: str, valence: bool) -> float:
-        return len(df[df[f'{status} Ground Truth'] == valence])/len(df)
-
-    @staticmethod
-    def pred_type_percentage(df: pd.DataFrame, status: str, pred_valence: bool, gt_valence: bool) -> float:
+    def percentage_valence(df: pd.DataFrame, status: str, valence: int) -> Tuple[str,float]:
         """
-        Compute percentages of true positive, false positive, true negative, false negative
+        Compute percentages of ground truth that is True or False for this level of prediction confidence. 
+
         """
-        return len(df[(df[f'{status} Prediction'] == pred_valence) & (df[f'{status} Ground Truth'] == gt_valence)])/len(df)
+        str_dict = {1: "Positive", 0: "Negative", 2: "Undetermined"}
+        valence_str = str_dict[valence]
+        try:
+            return f"{status} Ground Truth {valence_str} Percentage", len(df[df[f'{status} Ground Truth'] == valence])/len(df)
+        except ZeroDivisionError:
+            return f"{status} Ground Truth {valence_str} Percentage", 0
+
+
+    @staticmethod
+    def pred_type_percentage(df: pd.DataFrame, status: str, pred_valence: bool, gt_valence: bool) -> Tuple[str, float]:
+        """
+        Compute percentages of true positive, false positive, true negative, false negative predictions
+        """
+
+        # I don't like this string building logic but...
+        if pred_valence == gt_valence and pred_valence: 
+            pred_type = "True Positive"
+        elif pred_valence == gt_valence and not pred_valence: 
+            pred_type = "True Negative"
+        elif pred_valence != gt_valence and pred_valence: 
+            pred_type = "False Positive"
+        elif pred_valence != gt_valence and not pred_valence: 
+            pred_type = "False Negative"
+
+        
+        try:
+            return f"{status} {pred_type} Percentage", len(df[(df[f'{status} Prediction'] == pred_valence) & (df[f'{status} Ground Truth'] == gt_valence)])/len(df)
+        except ZeroDivisionError:
+            return f"{status} {pred_type} Percentage", 0 # not sure if this makes sense
 
 
 
@@ -160,7 +191,7 @@ class Dataset:
             elif np.isnan(value):
                 return(np.nan)
             else:
-                raise Exception("Invalid data type")
+                raise TypeError("Invalid data type")
 
 
         for status in status_list:
@@ -278,42 +309,17 @@ class Dataset:
         merge_preds_gt_df['catalog_number'] = merge_preds_gt_df.index
         merge_preds_gt_df['catalog_number'] = merge_preds_gt_df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
         merge_preds_gt_df.set_index('catalog_number', inplace=True)
-        # display(merge_preds_gt_df)
         self.master_df = self.master_df.join(merge_preds_gt_df, how="left")
-        # display(merge_preds_gt_df)
-        # print(f"master len: {len(self.master_df)}")
-
-
-
 
         unmatched_preds = merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)].index
-        # print(f" unmathched 1: {unmatched_preds}")
-        # print(f" unmatched len 1: {len(unmatched_preds)}")
         
-        # retry unmatched_preds
         retry = [pred_catalog_number for pred_catalog_number in unmatched_preds if len(pred_catalog_number) == 8]
-        # print(f" retry catalog numbers: {retry}")
-
         
-        # print("selected from retry")
         retry_df= merge_preds_gt_df[merge_preds_gt_df.index.isin(retry)]
         retry_df['retry_catalog_number'] = [x[2:] for x in retry_df.index]
         retry_df.set_index('retry_catalog_number', inplace=True)
-        # retry_df.drop(['retry_catalog_number'])
-        # print("display the retry")
-        # display(retry_df.head(10))
-
-        # print("checking retry presence")
-        # display(self.master_df.loc[self.master_df.index.isin(retry_df.index)])
-        # print("length of retry join")
-        # print(len(self.master_df.loc[self.master_df.index.isin(retry_df.index)]))
         
         self.master_df.fillna(retry_df, inplace=True)
-        # unmatched_preds = retry_df[~retry_df.index.isin(self.master_df.index)].index
-        # print("retry")
-        # display(self.master_df[self.master_df.index.isin(retry_df.index)].head(10))
-        # print(unmatched_preds[:min(len(unmatched_preds), 10)])
-        # print(len(unmatched_preds))
 
     @staticmethod
     def threshold_single(df: pd.DataFrame, status: str, threshold: float, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame:
@@ -324,13 +330,16 @@ class Dataset:
             metric_dict[metric_name] = metric_value
         return metric_dict
 
+
+    # TODO: what happens if you pass an empty dict?
+    # TODO: how to handle ALL status?
     @staticmethod
-    def threshold_range(df: pd.DataFrame, status: str, thresh_range: np.linspace, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame: # what happens if you pass an empty dict/
+    def threshold_range(df: pd.DataFrame, status_list: List[str], thresh_range: np.linspace, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame: # what happens if you pass an empty dict/
         metric_list = []
         for thresh in thresh_range:
-            print(thresh)
-            metric_list.append(Dataset.threshold_single(df, status, thresh, metrics))
+            status_dict = {}
+            for status in status_list:
+                status_dict.update(Dataset.threshold_single(df, status, thresh, metrics))
+            metric_list.append(status_dict)
         return pd.DataFrame.from_records(metric_list, index = thresh_range)
-
-
 
