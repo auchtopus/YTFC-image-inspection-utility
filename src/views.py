@@ -1,48 +1,26 @@
+from collections import defaultdict, Counter
+from typing import List, Tuple
 import pandas as pd
 import numpy as np
-import streamlit as st
-from collections import defaultdict, Counter
+
+
 
 from datasets import Metric, Dataset
 
 
-class CacheDataset(Dataset):
-    """
-    st.cache version of datasets.py
-    """
-
-    def __init__(self, label_map):
-        super().__init__(label_map)
-
-    def load_master_dataset(self, csv_path):
-        return super().load_master_dataset(csv_path)
-
-    def load_gt(self, gt_csv_path, status_list):
-        return super().load_gt(gt_csv_path, status_list)
-
-    def load_orders(self, order_csv_path, head_label=True):
-        return super().load_orders(order_csv_path, head_label=head_label)
-
-    def load_preds(self, pred_csv_path, status_list, binarized=False):
-        return super().load_preds(pred_csv_path, status_list, binarized=binarized)
-
-    def merge_preds_gt(self, preds_df, gt_df):
-        return super().merge_preds_gt(preds_df, gt_df)
-    
 
 class Dataview(Dataset): #TODO determine where to put queries
     
-    # @st.cache(allow_output_mutation=True)
-    def __init__(self, status_list, label_map, master_dataset_path, order_csv_path):
+
+    def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str, order_csv_path: str):
         super().__init__(label_map)
         super().load_master_dataset(master_dataset_path) # this gives us self.master_df
         super().load_orders(order_csv_path)
         self.fields = self.master_df.columns.values
         print(f"loading data from {master_dataset_path}")
         
-        
-    # @st.cache(allow_output_mutation=True)
-    def load_prediction_set(self, status_list, gt_csv_path, pred_csv_path):
+
+    def load_prediction_set(self, status_list: List[str], gt_csv_path: str, pred_csv_path: str) -> None:
         """
         There can be multiple gt/pred combinations appended to a single master list.
         """
@@ -53,8 +31,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         self.fields = self.master_df.columns.values
         
 
-
-    def summary_pd_query(self, query): # gets numbers, not samples
+    def summary_pd_query(self, query: dict, metrics: str) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
         """
         Query format: {status : str,
              family: [vals],
@@ -64,66 +41,69 @@ class Dataview(Dataset): #TODO determine where to put queries
              metrics: ['Accuracy', 'F1-score','Precision', 'Recall',True Positive', 'False Positive', 'True Negative', 'False Negative']}
         """
 
-        print(query)
+        # the index= parameter is what makes this all work
+        mask = pd.Series([False] * len(self.master_df), index = self.master_df.index)
+
+        # status filter
 
 
-        mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
-        # st.write(f"base_filter: {Counter(mask)}")
-
-        # check for status
-        if query['status'] != "All" and len(query['status']) > 0:
-            if f"{query['status']} Prediction" not in self.fields:
-                raise IndexError(f"No predictions for status: {query['status']}")
-            print(self.master_df[f"{query['status']} Prediction"].notnull())
-            print(len(mask), len(self.master_df[f"{query['status']} Prediction"].notnull()))
-            mask = (mask) & (self.master_df[f"{query['status']} Prediction"].notnull())
-            print(Counter(self.master_df[f"{query['status']} Prediction"].notnull()))
-            print(mask)
-            # st.write(f"status_filter: {Counter(mask)}")
-
-
-        original_length = Counter(mask)[True]
-
-        # st.write(f"status_filter: {Counter(mask)}")
-
+        # family filter
         if query['family'] != ['All Families'] and len(query['family'])> 0:
-            mask = (mask) & (self.master_df["family"].isin(query["family"]))
-            print(self.master_df["family"].isin(query["family"]))
-            print(Counter(self.master_df["family"].isin(query["family"])))
-        print(type(mask))
-        # st.write(f"family_filter: {Counter(mask)}")
+            mask = (mask) | (self.master_df["family"].isin(query["family"]))
+        if query['family'] == ['All Families']:
+            mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
+
+
+        # order filter
         if query['order'] != ['All Orders'] and len(query['order']) > 0:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
-        # st.write(f"order_filter: {Counter(mask)}")
-
-        if query['status'] != "All":
-            # we can do a summary
-            full_analysis = [(Metric.capture, {"status": query['status'], "original_length": original_length}),
-                             (Metric.accuracy, {"status": query['status']})]
-
-            metric_df = self.threshold_range(self.master_df[mask], query['status'], np.linspace(0.5, 1, 25,False), full_analysis)
-            st.dataframe(metric_df)
-            st.line_chart(metric_df)
+        if query['order'] == ['All Orders']:
+            mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
 
 
 
-
-
-        if query['status'] != "All" and len(query['status']) > 0:
-            mask = mask & (self.master_df[f"{query['status']} Prediction Confidence"] > query["confidence"])
-
-
-        mask_df = self.master_df[mask]
-        st.dataframe(mask_df)
+        base_metric_df = pd.DataFrame(index=np.linspace(0.5,1,25,False))
         
+        full_mask = mask.copy()
+
+
+        for status in query['status']:
+            # status filter
+            print(f"{status} base mask: {Counter(mask)}")
+            status_mask = (mask) & (self.master_df[f"{status} Prediction"].notnull()) & (self.master_df[f"{status} Ground Truth"].notnull())
+            print(f"{status} status mask: {Counter(status_mask)}")
+            full_mask = (full_mask) & (status_mask)
+            original_length = Counter(status_mask)[True]
+            # set correct metric status
+            full_metrics = {"Accuracy %": (Metric.accuracy, {"status": status}),
+                            "Capture %": (Metric.capture, {"status": status, "original_length": original_length}),
+                            "F1 Score": (Metric.f1, {"status": status}),
+                            "Precision": (Metric.precision, {"status": status}),
+                            "Recall": (Metric.recall, {"status": status}),
+                            "Ground Truth Positive %": (Metric.percentage_valence, {"status": status, "valence": 0}),
+                            "Ground Truth Negative %":(Metric.percentage_valence, {"status": status, "valence": 1}),
+                            "Ground Truth Undetermined %": (Metric.percentage_valence, {"status": status, "valence": 2}),
+                            "True Positive %": (Metric.pred_type_percentage, {"status": str, "pred_valence": True, "gt_valence": True}),
+                            "False Positive %": (Metric.pred_type_percentage, {"status": str, "pred_valence": True, "gt_valence": False}),
+                            "False Negative %": (Metric.pred_type_percentage, {"status": str, "pred_valence": False, "gt_valence": True}),
+                            "True Negative %": (Metric.pred_type_percentage, {"status": str, "pred_valence": False, "gt_valence": False})}
+
+
+            
+            print(f"{status} length: {len(self.master_df[status_mask])}")
+            metric_df = self.threshold_range(self.master_df[status_mask], [status], np.linspace(0.5, 1, 26,True), [full_metrics[metric] for metric in metrics])
+            base_metric_df = base_metric_df.join(metric_df)
+
+
+        mask_df = self.master_df[full_mask]
+
+        
+        return base_metric_df, mask_df
 
 
 
 
-
-
-
-    def sample_pd_query(self, query: defaultdict, col_list): # gets individual samples
+    def sample_pd_query(self, df: pd.DataFrame, status_list: List[str], threshold: float) -> pd.DataFrame: # gets individual samples
         """
         This is at least 5x slower than using sql, but using sql adds overheard for going from pandas to sql because the logic cannot be moved out of pandas
 
@@ -138,41 +118,21 @@ class Dataview(Dataset): #TODO determine where to put queries
              confusion_state: ['True Positive', 'False Positive', 'True Negative', 'False Negative']}
         """
     
-        # a status is necessary to see meaningful information for samples
 
 
+        # we want to OR everything!
+        mask = pd.Series([False] * len(df), index = df.index)
 
-        # work through the entries to build the query. Would sql be faster?
-        mask = pd.Series([True] * len(self.master_df))
-
-        if query['status'] != "All" and len(query['status']) > 0:
-            if f"{query['status']} Prediction" not in self.fields:
-                raise IndexError(f"No predictions for status: {query['status']}")
-            mask = mask & (self.master_df[f"{query['status']} Prediction"].notnull())
-
-        if query['family'] != 'All Families' and len(query['family'])> 0:
-            mask = mask & (self.master_df["family"].isin(query["family"]))
-        if query['order'] != 'All Orders' and len(query['order'])> 0:
-            mask = mask & (self.master_df["family"].isin(query["family"]))
-
-        # if query[f"{query['status']} Prediction"] != None:
-        #     mask = mask & (self.master_df[f"{query['status']} Prediction"] == f"{query['status']} Prediction")
-
-
-        mask = mask & (self.master_df[f"{query['status']} Prediction Confidence"] > query[f"{query['status']} Prediction Confidence"])
-        if query[f"{query['status']} Prediction"]:
-            def filter_conf_state(row, pred, gt):
-                return row[f"{query['status']} Prediction"] == pred and row[f"{query['status']} Ground Truth" ] == gt
-            state_dict = {"True Positive": [True, True],
-                          "False Positive": [True, False],
-                          "True Negative": [False, False],
-                          "False Negative": [False, True]}
-            for confusion_state in query["confusion_state"]:
-                state = state_dict[confusion_state]
-                mask = mask & (self.master_df.apply(filter_conf_state, axis = 1, pred = state[0], gt = state[1]))
+        for status in status_list:
+            mask = (mask) | (df[f"{status} Prediction Confidence"] > threshold)
+        
     
         mask_df = self.master_df[mask]
-        return mask_df[col_list]
+        status_cols = []
+        for status in status_list:
+            status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence"])
+        col_list = ["url", "sci_name", "family", "order"] + status_cols
+        return mask_df[mask_df]
         
 
 
@@ -186,4 +146,9 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
         
+
+
+        # # move this below
+        # if query['status'] != "All" and len(query['status']) > 0:
+        #     mask = mask & (self.master_df[f"{query['status']} Prediction Confidence"] > query["confidence"])
 
