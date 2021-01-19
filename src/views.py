@@ -127,12 +127,12 @@ class Dataview(Dataset): #TODO determine where to put queries
             mask = (mask) | (df[f"{status} Prediction Confidence"] > threshold)
         
     
-        mask_df = self.master_df[mask]
+        mask_df = df[mask]
         status_cols = []
         for status in status_list:
             status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence"])
-        col_list = ["url", "sci_name", "family", "order"] + status_cols
-        return mask_df[mask_df]
+        col_list = ["sci_name", "family", "order"] + status_cols
+        return mask_df[col_list]
         
 
 
