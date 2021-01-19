@@ -2,9 +2,13 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 
+
 import streamlit as st
 import pandas as pd
 import numpy as np
+from PIL import Image
+import requests
+from io import BytesIO
 
 from views import Dataview
 from datasets import Metric
@@ -96,8 +100,8 @@ def run():
             base_metric_df, mask_df = loaded_dict[dataset_name].summary_pd_query(query_dict, selected_metrics)
 
             st.line_chart(base_metric_df)
-            st.dataframe(mask_df)
-            st.dataframe(base_metric_df)
+            # st.dataframe(mask_df)
+            # st.dataframe(base_metric_df)
 
             # process individual samples
             lower_bound = st.slider("Select the lower confidence bound", 0.5, 1.0 , 0.9, 0.01)
@@ -105,6 +109,48 @@ def run():
             sample_df = loaded_dict[dataset_name].sample_pd_query(mask_df, status_select, lower_bound)
 
             st.dataframe(sample_df)
+
+            # image loading
+            image_name = st.selectbox("Image to display", sample_df.index)
+
+
+            cursor = np.where(sample_df.index == image_name)[0]
+
+            if cursor > 0:
+                left_c = sample_df.index[cursor -1].values[0]
+            else:
+                left_c = None
+            if cursor < len(sample_df)-1:
+                right_c = sample_df.index[cursor+1].values[0]
+            else:
+                right_c = None
+            left, right = st.beta_columns(2)
+            with left:
+                go_left = st.button(f"Previous: {left_c}")
+            with right:
+                go_right = st.button(f"Next: {right_c}")
+
+            if go_left:
+                image_name = left_c
+            if go_right:
+                image_name = right_c
+
+
+            st.dataframe(sample_df.loc[image_name])
+
+
+            image_url = loaded_dict[dataset_name].master_df.loc[image_name, "url"]
+            response = requests.get(image_url)
+            sample_image = Image.open(BytesIO(response.content))
+            st.image(sample_image, caption = f"sample: {image_name}", use_column_width=True)
+                
+            
+
+
+
+                
+
+             
 
 
 
