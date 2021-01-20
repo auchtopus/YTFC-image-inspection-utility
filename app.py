@@ -10,8 +10,8 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-from views import Dataview
-from datasets import Metric
+from src.views import Dataview
+from src.datasets import Metric
 
 
 datasets = OrderedDict(
