@@ -1,5 +1,5 @@
 {
-    "name": "Dataset 2",
+    "name": "dataset_2",
     "base_schema": {"catalog_number":  "catalogNumber", 
                     "url": "originalurl",
                     "sci_name": "scientificName",
@@ -15,7 +15,8 @@
                     "locality": "locality",
                     "latitude": "decimalLatitude",
                     "longitue": "decimalLongitude"},
-    "master_dataset_path": "./data/master_datasets/NEVP_phenology_unscored_20191206.csv", 
+    "master_path": "./data/filter_master/dataset_2.csv", 
+    "raw_master_path": "./data/master_datasets/NEVP_phenology_unscored_20191206.csv",
     "status_list": ["Budding","Flowering", "Fruiting", "Reproductive"],
     "ground_truth": {"Budding": "./data/ground_truth/dataset_2_gt.csv", 
                      "Flowering": "./data/ground_truth/dataset_2_gt.csv", 

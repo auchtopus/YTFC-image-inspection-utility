@@ -47,8 +47,6 @@ def run():
 
     dataset_json = datasets[dataset_name]
 
-    dataview_1, dataview_2, dataview_3 = None, None, None
-
     if dataset_name == "-":
         st.write("Welcome!")
         intro_mkd = Path("./assets/introduction.md").read_text()
@@ -57,24 +55,16 @@ def run():
     else:
         print(loaded_dict.keys())
         if dataset_name not in loaded_dict:
+            
             dataset_info = load_info(dataset_json)
             with st.spinner('Loading data...'):
                 dataview = Dataview(dataset_info['status_list'], 
-                                    dataset_info['base_schema'],
-                                    dataset_info['master_dataset_path'],
-                                    dataset_info['orders'])
+                                    dataset_info['base_schema'], dataset_info['master_path'])
+
+            loaded_dict[dataset_name] = dataview
                 
-                loaded_dict[dataset_name] = dataview
-
-            # load all the statuses
-            for status in status_list:
-                dataview.load_prediction_set([status], dataset_info['ground_truth'][status], dataset_info['predictions'][status])
-                # st.dataframe(dataview.master_df.head(10))
-
         
         status_select = st.multiselect("Choose a phenological status to analyze", status_list)
-
-
 
         if len(status_select) == 0:
             st.write("Select phenological statuses to get started")

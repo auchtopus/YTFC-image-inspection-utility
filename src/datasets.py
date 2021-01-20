@@ -3,8 +3,6 @@ from abc import ABC
 
 import pandas as pd
 import numpy as np
-from sklearn.metrics import f1_score, precision_score, recall_score
-import streamlit as st
 
 """
 Each dataset is related to an original master_dataset. One Dataset object can have multiple scorings associated with it, but only one master_dataset. 
@@ -38,17 +36,17 @@ class Metric:
         except ZeroDivisionError:
             return f"{status} Accuracy", 1 # 
 
-    @staticmethod
-    def f1(df: pd.DataFrame, status: str) -> Tuple[str, float]:
-        return f"{status} F1", f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
+    # @staticmethod
+    # def f1(df: pd.DataFrame, status: str) -> Tuple[str, float]:
+    #     return f"{status} F1", f1_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
-    @staticmethod
-    def precision(df: pd.DataFrame, status: str) -> Tuple[str,float]:
-        return f"{status} Precision", precision_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
+    # @staticmethod
+    # def precision(df: pd.DataFrame, status: str) -> Tuple[str,float]:
+    #     return f"{status} Precision", precision_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
-    @staticmethod
-    def recall(df: pd.DataFrame, status: str) -> Tuple[str,float]:
-        return f"{status} Recall", recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
+    # @staticmethod
+    # def recall(df: pd.DataFrame, status: str) -> Tuple[str,float]:
+    #     return f"{status} Recall", recall_score(df[f"{status} Ground Truth"], df[f"{status} Prediction"], zero_division = 0,average='weighted')
 
     @staticmethod
     def percentage_valence(df: pd.DataFrame, status: str, valence: int) -> Tuple[str,float]:
@@ -88,7 +86,7 @@ class Metric:
 
 class Dataset:
 
-    def __init__(self, label_map: dict = {}):
+    def __init__(self, status_list = List[str], label_map: dict = {}):
         self.master_df = None
 
         # we will rename every column to these standardized names
@@ -105,10 +103,10 @@ class Dataset:
                          "municipality": None,
                          "locality": None,
                          "latitude": None,
-                         "longitue": None}
+                         "longitude": None}
         self.label_map.update(label_map)
         self.order_map = {}
-        self.status_list = ['Budding', 'Flowering', 'Fruiting' ,'Reproductive']
+        self.status_list = status_list
 
 
     def load_master_dataset(self, csv_path, local = False):
@@ -158,7 +156,6 @@ class Dataset:
 
 
     @staticmethod
-    @st.cache
     def load_gt(ground_truth_file, status_list):
         """
         Generates the ground truth from a scoring csv
@@ -207,7 +204,6 @@ class Dataset:
         return ground_truth_df[gt_status_list]
     
     @staticmethod
-    @st.cache
     def load_preds(pred_csv_path, status_list, binarized = False):
         """
         Loads the predictions from pred_csv_path, binarizes the data, reindexes to catalog_number
