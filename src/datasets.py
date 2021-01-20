@@ -11,7 +11,7 @@ Each dataset is related to an original master_dataset. One Dataset object can ha
 
 """
 
-
+AWS_BUCKET_BASE = "https://ytfc.s3.us-east-2.amazonaws.com"
 
 
 class Metric:
@@ -84,14 +84,6 @@ class Metric:
         except ZeroDivisionError:
             return f"{status} {pred_type} Percentage", 0 # not sure if this makes sense
 
-
-
-    
-
-    
-
-
-
 class Dataset:
 
     def __init__(self, label_map: dict = {}):
@@ -116,8 +108,16 @@ class Dataset:
         self.order_map = {}
         self.status_list = ['Budding', 'Flowering', 'Fruiting' ,'Reproductive']
 
-    def load_master_dataset(self, csv_path):
-        self.master_df = pd.read_csv(csv_path)
+
+    def load_master_dataset(self, csv_path, local = False):
+        if local:
+            self.master_df = pd.read_csv(csv_path)
+        else:
+            if csv_path[0] == ".":
+                csv_path = csv_path[2:]
+            load_path = f"{AWS_BUCKET_BASE}/{csv_path}"
+            print(load_path)
+            self.master_df = pd.read_csv(load_path)
         self.master_df.rename(columns = {v:k for k,v in self.label_map.items()},inplace=True)
         # deduping because we use our own ground truth, and only need one version of every file
         self.master_df.drop_duplicates(subset = ['catalog_number'], keep='first', inplace=True)
