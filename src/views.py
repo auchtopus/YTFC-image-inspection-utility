@@ -4,20 +4,15 @@ import pandas as pd
 import numpy as np
 
 
-
 from .datasets import Metric, Dataset
 
 
-
 class Dataview(Dataset): #TODO determine where to put queries
-    
 
-    def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str, order_csv_path: str):
-        super().__init__(label_map)
-        super().load_master_dataset(master_dataset_path, local=False) # this gives us self.master_df
-        super().load_orders(order_csv_path)
-        self.fields = self.master_df.columns.values
-        print(f"loading data from {master_dataset_path}")
+    def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str):
+        super().__init__(status_list, label_map)
+        self.master_df = pd.read_csv(master_dataset_path, index_col = 'catalog_number')
+
         
 
     def load_prediction_set(self, status_list: List[str], gt_csv_path: str, pred_csv_path: str) -> None:
@@ -28,7 +23,6 @@ class Dataview(Dataset): #TODO determine where to put queries
         gt_df =super().load_gt(gt_csv_path, status_list)
         preds_df = super().load_preds(pred_csv_path, status_list)
         super().merge_preds_gt(preds_df, gt_df)
-        self.fields = self.master_df.columns.values
         
 
     def summary_pd_query(self, query: dict, metrics: str) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
@@ -77,9 +71,9 @@ class Dataview(Dataset): #TODO determine where to put queries
             # set correct metric status
             full_metrics = {"Accuracy %": (Metric.accuracy, {"status": status}),
                             "Capture %": (Metric.capture, {"status": status, "original_length": original_length}),
-                            "F1 Score": (Metric.f1, {"status": status}),
-                            "Precision": (Metric.precision, {"status": status}),
-                            "Recall": (Metric.recall, {"status": status}),
+                            # "F1 Score": (Metric.f1, {"status": status}),
+                            # "Precision": (Metric.precision, {"status": status}),
+                            # "Recall": (Metric.recall, {"status": status}),
                             "Ground Truth Positive %": (Metric.percentage_valence, {"status": status, "valence": 0}),
                             "Ground Truth Negative %":(Metric.percentage_valence, {"status": status, "valence": 1}),
                             "Ground Truth Undetermined %": (Metric.percentage_valence, {"status": status, "valence": 2}),
