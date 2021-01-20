@@ -14,7 +14,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
     def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str, order_csv_path: str):
         super().__init__(label_map)
-        super().load_master_dataset(master_dataset_path) # this gives us self.master_df
+        super().load_master_dataset(master_dataset_path, local) # this gives us self.master_df
         super().load_orders(order_csv_path)
         self.fields = self.master_df.columns.values
         print(f"loading data from {master_dataset_path}")
@@ -130,7 +130,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         mask_df = df[mask]
         status_cols = []
         for status in status_list:
-            status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence"])
+            status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence", f"{status} Ground Truth"])
         col_list = ["sci_name", "family", "order"] + status_cols
         return mask_df[col_list]
         
