@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-from datasets import Metric, Dataset
+from .datasets import Metric, Dataset
 
 
 
@@ -14,7 +14,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
     def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str, order_csv_path: str):
         super().__init__(label_map)
-        super().load_master_dataset(master_dataset_path, local) # this gives us self.master_df
+        super().load_master_dataset(master_dataset_path, local=False) # this gives us self.master_df
         super().load_orders(order_csv_path)
         self.fields = self.master_df.columns.values
         print(f"loading data from {master_dataset_path}")
