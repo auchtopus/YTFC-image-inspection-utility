@@ -32,7 +32,9 @@ class Metric:
     def accuracy(df: pd.DataFrame, status: str) -> Tuple[str, float]:
         # print(len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]]), len(df))
         try:
-            return f"{status} Accuracy", len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]])/len(df[f"{status} Ground Truth"].notnull())
+            filter_df = df[df[f"{status} Ground Truth"].notnull()]
+            print(len(filter_df[filter_df[f"{status} Prediction"] == filter_df[f"{status} Ground Truth"]]), len(filter_df[f"{status} Ground Truth"].notnull()))
+            return f"{status} Accuracy", len(filter_df[filter_df[f"{status} Prediction"] == filter_df[f"{status} Ground Truth"]])/len(filter_df[f"{status} Ground Truth"].notnull())
         except ZeroDivisionError:
             return f"{status} Accuracy", 1 # 
 
@@ -181,8 +183,6 @@ class Dataset:
 
 
         def substitute(value):
-#             print(type(value))
-#             print(value)
             if value == "True" or value == True:
                 return True
             elif value == 'False' or value == False:
@@ -228,10 +228,8 @@ class Dataset:
 
         """
         pred_df = pd.read_csv(pred_csv_path)
-        if np.isnan(pred_df.iloc[0,1]):
-            pred_df = pred_df.loc[1:]
-
-                        
+        
+        pred_df.dropna(subset = ['Filepath'], inplace=True)
         def substitute(value):
             if "Not" in value:
                 return False
@@ -259,21 +257,25 @@ class Dataset:
 
     @staticmethod
     def parse_name(name) -> str:
-#         if name[0] in {'1','2','3','4','5','6','7','8','9'}:
-#             #print("entered starting with number")
-#             if len(name) == 7:
-#                 return "barcode-0"+name, name, int(name)
-#             if len(name) == 6:
-#                 return "barcode-00"+name, name, int(name)
+        """
+        converts file names into the original catalog_number
+
+        """
+        # if name[0] in {'1','2','3','4','5','6','7','8','9'}:
+        #     #print("entered starting with number")
+        #     if len(name) == 7:
+        #         return "barcode-0"+name, name, int(name)
+        #     if len(name) == 6:
+        #         return "barcode-00"+name, name, int(name)
         if name[0:4] == "ECON":
             partial = name[-7:]
             if partial[0] == '0':
                 return "barcode-00"+name[-6:]
             else:
                 return "barcode-0"+name[-7:]
-#         if name[0:2] == "00":
-#             print("barcode-"+name)
-#             return "barcode-"+name
+        # if name[0:2] == "00":
+        #     print("barcode-"+name)
+        #     return "barcode-"+name
         if name[0:3] == "CBS":
             return "CBS." + name[3:9]
         if name[0:3] == "GH0":
@@ -295,29 +297,25 @@ class Dataset:
         return name
 
 
-    # maybe st.cache needs to be applied to methods to return?
-
-    def merge_preds_gt(self, preds_df, gt_df):
+    def merge_df(self, df):
         """
-        Merges predictions and ground truth with self.master_df
-
-
+        merges df onto master by catalog number
         """
-        merge_preds_gt_df = preds_df.join(gt_df, how='inner')
-        merge_preds_gt_df['catalog_number'] = merge_preds_gt_df.index
-        merge_preds_gt_df['catalog_number'] = merge_preds_gt_df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
-        merge_preds_gt_df.set_index('catalog_number', inplace=True)
-        self.master_df = self.master_df.join(merge_preds_gt_df, how="left")
+        df['catalog_number'] = df.index
+        df['catalog_number'] = df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
+        df.set_index('catalog_number', inplace=True)
+        self.master_df = self.master_df.join(df, how="left")
 
-        unmatched_preds = merge_preds_gt_df[~merge_preds_gt_df.index.isin(self.master_df.index)].index
+        unmatched_preds = df[~df.index.isin(self.master_df.index)].index
         
         retry = [pred_catalog_number for pred_catalog_number in unmatched_preds if len(pred_catalog_number) == 8]
         
-        retry_df= merge_preds_gt_df[merge_preds_gt_df.index.isin(retry)]
+        retry_df= df[df.index.isin(retry)]
         retry_df['retry_catalog_number'] = [x[2:] for x in retry_df.index]
         retry_df.set_index('retry_catalog_number', inplace=True)
         
         self.master_df.fillna(retry_df, inplace=True)
+
 
     @staticmethod
     def threshold_single(df: pd.DataFrame, status: str, threshold: float, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame:

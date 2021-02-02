@@ -17,7 +17,8 @@ from src.datasets import Metric
 datasets = OrderedDict(
     [("-", None),
     ("Dataset 1", "./data/dataset_info/dataset_1.json"),
-    ("Dataset 2", "./data/dataset_info/dataset_2.json"),
+    ("Dataset 2 - scored subset", "./data/dataset_info/dataset_2.json"),
+    ("Dataset 2 - full predictions", "./data/dataset_info/dataset_2_full.json"),
     ("Dataset 3", "./data/dataset_info/dataset_3.json")]
 )
 
@@ -78,7 +79,7 @@ def run():
             # order
             order_list = list(loaded_dict[dataset_name].order_map.values()) + ["All Orders"]
             orders = st.multiselect("Select the orders to analyze, or select `All Orders`", order_list, ["All Orders"])
-            full_metrics = ['Accuracy %', 'Capture %', 'F1 Score', 'Precision', 'Recall', 'Ground Truth Positive %', 'Ground Truth Negative %', 'Ground Truth Undetermined %', 'True Positive %', 'False Positive %', 'False Negative %', 'True Negative %']
+            full_metrics = ['Accuracy %', 'Capture %', 'Ground Truth Positive %', 'Ground Truth Negative %', 'Ground Truth Undetermined %', 'True Positive %', 'False Positive %', 'False Negative %', 'True Negative %']
             # metrics
             selected_metrics = st.multiselect("Select the metrics to chart", full_metrics, ["Accuracy %", "Capture %"])
 
