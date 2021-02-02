@@ -49,6 +49,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
         # order filter
+        # TODO: remove order as a necessary query step
         if query['order'] != ['All Orders'] and len(query['order']) > 0:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
         if query['order'] == ['All Orders']:
@@ -64,7 +65,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         for status in query['status']:
             # status filter
             print(f"{status} base mask: {Counter(mask)}")
-            status_mask = (mask) & (self.master_df[f"{status} Prediction"].notnull()) & (self.master_df[f"{status} Ground Truth"].notnull())
+            status_mask = (mask) & (self.master_df[f"{status} Prediction"].notnull())
             print(f"{status} status mask: {Counter(status_mask)}")
             full_mask = (full_mask) & (status_mask)
             original_length = Counter(status_mask)[True]
