@@ -127,6 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+<<<<<<< HEAD
 
 ./data/master_datasets/
 ./data/ground_truth/
@@ -135,3 +136,5 @@ dmypy.json
 
 ./vscode
 
+=======
+>>>>>>> e1c54a9e0f03f863c415e48b458c8c33c733530f
