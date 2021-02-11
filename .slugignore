@@ -1,1 +1,14 @@
+__pycache__/
+
+
+
 filter_master.py
+modify_dataset.py
+generate_scoring.py
+
+
+data/scoring_info/*
+data/orders/*
+data/predictions/*
+data/master_datasets/*
+

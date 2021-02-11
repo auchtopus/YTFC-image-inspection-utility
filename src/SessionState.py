@@ -19,6 +19,7 @@ result:
 'Mary'
 
 """
+import streamlit as st
 try:
     import streamlit.ReportThread as ReportThread
     from streamlit.server.Server import Server
@@ -115,3 +116,21 @@ def get(**kwargs):
         this_session._custom_session_state = SessionState(**kwargs)
 
     return this_session._custom_session_state
+
+
+
+def demo():
+
+    index = get(val = 1)
+
+    if st.button("forward"):
+       index.val +=1 
+
+    if st.button("backward"):
+        index.val -= 1
+        
+    st.text(index.val) 
+
+
+if __name__ == "__main__":
+    demo()
