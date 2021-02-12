@@ -142,7 +142,7 @@ class ScoringSession:
     def __init__(self, session_key):
         self.status_range = ["Reproductive", "Flowering", "Fruiting", "Budding"]
         self.session_key = session_key
-        bucket.download_file(f"scoring_info/{session_key}.json", f"{session_key}.json")
+        bucket.download_file(f"scoring_info/{session_key}/{session_key}.json", f"{session_key}.json")
         with open(f"{session_key}.json", 'r') as session_json:
             self.session = json.load(session_json)
 
@@ -150,7 +150,7 @@ class ScoringSession:
         self.length = self.session['length']
         self.index = ss.get(val = self.session['index'])
 
-        bucket.download_file(f'scoring_info/{session_key}_scoring.csv', f'{session_key}_scoring.csv')
+        bucket.download_file(f'scoring_info/{session_key}/{session_key}_scoring.csv', f'{session_key}_scoring.csv')
         self.scoring_df = pd.read_csv(f'{session_key}_scoring.csv')
         
         # bucket.download_file(f'scoring_info/{session_key}_comp.csv', f'{session_key}_comp.csv')
@@ -163,7 +163,7 @@ class ScoringSession:
 
         with open(f"{self.session_key}.json", 'w') as new_json:
             json.dump(self.session, new_json)
-        bucket.upload_file(f"{self.session_key}.json", f"scoring_info/{self.session_key}.json")
+        bucket.upload_file(f"{self.session_key}.json", f"scoring_info/{self.session_key}/{self.session_key}.json")
 
         with open(f"{self.session_key}_{status_dict['catalog_number']}.json", 'w') as new_json:
             json.dump(status_dict, new_json)
