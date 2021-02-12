@@ -33,7 +33,7 @@ class Metric:
         # print(len(df[df[f"{status} Prediction"] == df[f"{status} Ground Truth"]]), len(df))
         try:
             filter_df = df[df[f"{status} Ground Truth"].notnull()]
-            print(len(filter_df[filter_df[f"{status} Prediction"] == filter_df[f"{status} Ground Truth"]]), len(filter_df[f"{status} Ground Truth"].notnull()))
+            # print(len(filter_df[filter_df[f"{status} Prediction"] == filter_df[f"{status} Ground Truth"]]), len(filter_df[f"{status} Ground Truth"].notnull()))
             return f"{status} Accuracy", len(filter_df[filter_df[f"{status} Prediction"] == filter_df[f"{status} Ground Truth"]])/len(filter_df[f"{status} Ground Truth"].notnull())
         except ZeroDivisionError:
             return f"{status} Accuracy", 1 # 

@@ -64,9 +64,9 @@ class Dataview(Dataset): #TODO determine where to put queries
 
         for status in query['status']:
             # status filter
-            print(f"{status} base mask: {Counter(mask)}")
+            # print(f"{status} base mask: {Counter(mask)}")
             status_mask = (mask) & (self.master_df[f"{status} Prediction"].notnull())
-            print(f"{status} status mask: {Counter(status_mask)}")
+            # print(f"{status} status mask: {Counter(status_mask)}")
             full_mask = (full_mask) & (status_mask)
             original_length = Counter(status_mask)[True]
             # set correct metric status
@@ -85,7 +85,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
             
-            print(f"{status} length: {len(self.master_df[status_mask])}")
+            # print(f"{status} length: {len(self.master_df[status_mask])}")
             metric_df = self.threshold_range(self.master_df[status_mask], [status], np.linspace(0.5, 1, 26,True), [full_metrics[metric] for metric in metrics])
             base_metric_df = base_metric_df.join(metric_df)
 
