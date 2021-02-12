@@ -122,14 +122,16 @@ def get(**kwargs):
 def demo():
 
     index = get(val = 1)
+    st.text(index.val) 
 
+    
     if st.button("forward"):
        index.val +=1 
 
     if st.button("backward"):
         index.val -= 1
         
-    st.text(index.val) 
+    
 
 
 if __name__ == "__main__":

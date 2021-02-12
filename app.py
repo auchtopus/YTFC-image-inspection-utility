@@ -1,4 +1,6 @@
 ## TODO: - update the files with orders using process_dataset.py
+## TODO: add db support
+## TODO: prevent intermediate compilation of the middle steps
 
 import json
 from collections import OrderedDict
@@ -63,8 +65,6 @@ def perm_obj(obj):
 def homepage():
     st.write("Homepage!")
     st.write("choose a mode at left")
-
-
 
 def inspection():
     
@@ -137,7 +137,6 @@ def inspection():
             sample_image = Image.open(BytesIO(response.content))
             st.image(sample_image, caption = f"sample: {image_name}", use_column_width=True)
 
-
 class ScoringSession:
 
     def __init__(self, session_key):
@@ -156,47 +155,28 @@ class ScoringSession:
         
         # bucket.download_file(f'scoring_info/{session_key}_comp.csv', f'{session_key}_comp.csv')
 
-    def save(self, df):
-        self.session['index'] = self.index.val
+
+    # replace this with a db!
+    def submit(self, status_dict):
+        self.session['index'] = status_dict['index']
+        
+
         with open(f"{self.session_key}.json", 'w') as new_json:
             json.dump(self.session, new_json)
-        df.to_csv(f'{self.session_key}_scoring.csv')
-
-        bucket.upload_file(f'{self.session_key}_scoring.csv', f'scoring_info/{self.session_key}_scoring.csv')
         bucket.upload_file(f"{self.session_key}.json", f"scoring_info/{self.session_key}.json")
-        # pass
-        return None
 
-    def submit(self, status_dict):
-        status_save = status_dict.copy()
-        index_perm = int(self.index.val)
-        print(f"{index_perm=}")
-        if index_perm == self.session['index']:
-            pass
-        else:
-            for status in self.status_range:
-                self.scoring_df.loc[index_perm-1, f"{status} Ground Truth"] = status_save[status]
-            if index_perm%10 == 0:
-                self.save(self.scoring_df.copy())
+        with open(f"{self.session_key}_{status_dict['catalog_number']}.json", 'w') as new_json:
+            json.dump(status_dict, new_json)
+        bucket.upload_file(f"{self.session_key}_{status_dict['catalog_number']}.json", f"scoring_info/{self.session_key}/{status_dict['catalog_number']}.json")
+
         self.index.val += 1
-        print(self.scoring_df[["catalog_number"]+[f"{status} Ground Truth" for status in self.status_range]].head(10))
-        print(f"{index_perm=}, {self.index.val=}")
-        return None
 
     def score(self):
         print(f"{self.index.val=}")
 
-
         if self.index.val == self.session['length'] + 1:
             st.write("Finished! Thank you :)")
-            self.save(self.scoring_df.copy())
-
-        image_url = self.scoring_df.loc[self.index.val, "url"]
-        image_name = self.scoring_df.loc[self.index.val, "catalog_number"]
-        response = requests.get(image_url)
-        sample_image = Image.open(BytesIO(response.content))
-        st.image(sample_image, caption = f"sample: {image_name}", use_column_width=True) 
-        st.text(f"{self.index.val}/{self.length} images scored")
+            st.stop()
 
         col1, col2, col3, col4 = st.beta_columns(4)
         status_dict = dict(zip(self.status_range, [np.NaN] * 4))
@@ -213,8 +193,19 @@ class ScoringSession:
         submit = st.button("Submit")
 
         if submit:
-            self.submit(status_dict)
-            
+            status_save = status_dict.copy()
+            status_save['catalog_number'] = self.scoring_df.loc[self.index.val, "catalog_number"]
+            status_save['index'] = self.index.val
+            self.submit(status_save)
+
+        image_url = self.scoring_df.loc[self.index.val, "url"]
+        image_name = self.scoring_df.loc[self.index.val, "catalog_number"]
+
+
+        response = requests.get(image_url)
+        sample_image = Image.open(BytesIO(response.content))
+        st.image(sample_image, caption = f"sample: {image_name}", use_column_width=True) 
+        st.text(f"{self.index.val}/{self.length} images scored")
 
 
 
@@ -224,11 +215,11 @@ class ScoringSession:
 def authentication():
     @cache_on_button_press('Authenticate')
     def authenticate(password):
-        return password == "s4msara"
+        return password == os.environ.get("YTFC_PASSWORD")
 
 
     password = st.text_input('Password')
-    session_key = st.selectbox('Session Key', ['-', '02_09_2021', 'test'], 0)
+    session_key = st.selectbox('Session Key', ['-', '02_09_2021'], 0)
 
     if authenticate(password):
         scoring_session = ScoringSession(session_key)
