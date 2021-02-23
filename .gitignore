@@ -132,6 +132,7 @@ dmypy.json
 ./data/ground_truth/
 ./data/orders/
 ./data/predictions/
+./data/update/
 
 ./vscode
 

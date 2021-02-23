@@ -206,11 +206,7 @@ class ScoringSession:
         sample_image = Image.open(BytesIO(response.content))
         st.image(sample_image, caption = f"sample: {image_name}", use_column_width=True) 
         st.text(f"{self.index.val}/{self.length} images scored")
-
-
-
-                
-            
+    
 
 def authentication():
     @cache_on_button_press('Authenticate')
