@@ -1,5 +1,0 @@
-{
-    "python.pythonPath": "/Users/antonsquared/.pyenv/versions/py3.8_ytfc/bin/python",
-    "jupyter.jupyterServerType": "local",
-    "python.formatting.provider": "black"
-}
