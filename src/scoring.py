@@ -13,6 +13,8 @@ from io import BytesIO
 import boto3
 
 
+import src.SessionState as ss
+
 bucket_name = "ytfc"
 
 s3 = boto3.resource('s3')
