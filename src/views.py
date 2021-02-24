@@ -33,6 +33,10 @@ class Dataview(Dataset): #TODO determine where to put queries
              {status} Prediction: True/False,
              {status} Prediction Confidence: np.linspace,
              metrics: ['Accuracy', 'F1-score','Precision', 'Recall',True Positive', 'False Positive', 'True Negative', 'False Negative']}
+
+        Returns:
+            base_metric_df: the summary_df of metrics against time
+            mask_df: individual items_
         """
 
         # the index= parameter is what makes this all work
@@ -72,6 +76,7 @@ class Dataview(Dataset): #TODO determine where to put queries
             # set correct metric status
             full_metrics = {"Accuracy %": (Metric.accuracy, {"status": status}),
                             "Capture %": (Metric.capture, {"status": status, "original_length": original_length}),
+                            "Count": (Metric.count_samples,{"status": status}),
                             # "F1 Score": (Metric.f1, {"status": status}),
                             # "Precision": (Metric.precision, {"status": status}),
                             # "Recall": (Metric.recall, {"status": status}),
@@ -86,7 +91,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
             
             # print(f"{status} length: {len(self.master_df[status_mask])}")
-            metric_df = self.threshold_range(self.master_df[status_mask], [status], np.linspace(0.5, 1, 26,True), [full_metrics[metric] for metric in metrics])
+            metric_df = self.threshold_range(self.master_df[status_mask], [status], np.linspace(0.5, 1, 51,True), [full_metrics[metric] for metric in metrics])
             base_metric_df = base_metric_df.join(metric_df)
 
 

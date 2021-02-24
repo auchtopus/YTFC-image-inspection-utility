@@ -1,8 +1,8 @@
 import json
 import os
+import sys
 
 
-import streamlit as st
 import pandas as pd
 import numpy as np
 import boto3
@@ -16,9 +16,9 @@ bucket = s3.Bucket(bucket_name)
 
 
 def parse(status):
-    if status == "true" or status:
+    if status == "true" or status == True:
         return True
-    elif status == "false" or not status:
+    elif status == "false" or status == False:
         return False
     else:
         return np.nan
@@ -42,6 +42,7 @@ def download_jsons(session_key, save_all = False):
 
             for status in ['Reproductive', 'Budding', 'Fruiting', 'Flowering']:
                 manifest_df.loc[item_info['catalog_number'], f"{status} Ground Truth"] = parse(item_info[status])
+                print(parse(item_info[status]))
 
 
         except botocore.exceptions.ClientError as e:
@@ -49,3 +50,8 @@ def download_jsons(session_key, save_all = False):
                 print(f"{item} does not exist.")
         
     manifest_df.to_csv(f'./data/filter_master/{session_key}_scoring.csv')
+
+
+
+if __name__ == "__main__":
+    download_jsons(sys.argv[1])

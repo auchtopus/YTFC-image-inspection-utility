@@ -47,6 +47,7 @@ load_mask = OrderedDict(
 mode_list = ["Homepage", "Inspection", "Scoring"]
 scoring_sets = OrderedDict(
     [("-", None),
+     ("test", "./data/scoring_info/02_06_2021.json"),
      ("Scoring: Feb 6, 2021", "./data/scoring_info/02_06_2021.json")]
 )
 
@@ -121,7 +122,7 @@ def inspection():
             # order
             order_list = list(loaded_dict[dataset_name].order_map.values()) + ["All Orders"]
             orders = st.multiselect("Select the orders to analyze, or select `All Orders`", order_list, ["All Orders"])
-            full_metrics = ['Accuracy %', 'Capture %', 'Ground Truth Positive %', 'Ground Truth Negative %', 'Ground Truth Undetermined %', 'True Positive %', 'False Positive %', 'False Negative %', 'True Negative %']
+            full_metrics = ['Accuracy %', 'Capture %', 'Count', 'Ground Truth Positive %', 'Ground Truth Negative %', 'Ground Truth Undetermined %', 'True Positive %', 'False Positive %', 'False Negative %', 'True Negative %']
             # metrics
             selected_metrics = st.multiselect("Select the metrics to chart", full_metrics, ["Accuracy %", "Capture %"])
 
