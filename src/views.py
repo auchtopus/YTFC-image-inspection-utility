@@ -14,17 +14,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         self.master_df = pd.read_csv(master_dataset_path, index_col = 'catalog_number')
 
         
-
-    def load_prediction_set(self, status_list: List[str], gt_csv_path: str, pred_csv_path: str) -> None:
-        """
-        There can be multiple gt/pred combinations appended to a single master list.
-        """
-
-        gt_df =super().load_gt(gt_csv_path, status_list)
-        preds_df = super().load_preds(pred_csv_path, status_list)
-        super().merge_preds_gt(preds_df, gt_df)
-        
-
+    
     def summary_pd_query(self, query: dict, metrics: str) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
         """
         Query format: {status : str,
@@ -61,7 +51,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
 
-        base_metric_df = pd.DataFrame(index=np.linspace(0.5,1,25,False))
+        base_metric_df = pd.DataFrame(index=np.linspace(0.5,1,51,True))
         
         full_mask = mask.copy()
 
