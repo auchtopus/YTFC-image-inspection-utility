@@ -86,7 +86,6 @@ def inspection():
     # returns the second element of the tuple with first value being the selection
 
     dataset_json = datasets[dataset_name]
-    req_load = load_mask[dataset_name]
 
     if dataset_name == "-":
         st.write("Welcome!")

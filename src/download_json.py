@@ -23,6 +23,15 @@ def parse(status):
     else:
         return np.nan
 
+
+def parse_original(status):
+    if status == "true" or status:
+        return True
+    elif status == "false" or not status:
+        return False
+    else:
+        return np.nan
+
 def download_jsons(session_key, save_all = False):
     print(session_key)
     bucket.download_file(f"scoring_info/{session_key}/{session_key}_scoring.csv", f"{session_key}_scoring.csv")
@@ -49,7 +58,7 @@ def download_jsons(session_key, save_all = False):
             if e.response['Error']['Code'] == "404":
                 print(f"{item} does not exist.")
         
-    manifest_df.to_csv(f'./data/filter_master/{session_key}_scoring.csv')
+    manifest_df.to_csv(f'./data/filter_master/{session_key}_bad_scoring.csv')
 
 
 
