@@ -15,18 +15,21 @@ class Dataview(Dataset): #TODO determine where to put queries
 
         
     
-    def summary_pd_query(self, query: dict, metrics: str) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
+    def summary_pd_query(self, query: dict, metrics: str, threshold_linspace: np.linspace = np.linspace(0.5, 1, 51,True)) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
         """
+        Query for information in a dataframe; computes metrics at every value in threshold_linspace. 
+
+
         Query format: {status : str,
              family: [vals],
              order: [vals], 
              {status} Prediction: True/False,
              {status} Prediction Confidence: np.linspace,
-             metrics: ['Accuracy', 'F1-score','Precision', 'Recall',True Positive', 'False Positive', 'True Negative', 'False Negative']}
+        metrics: ['Accuracy', 'F1-score','Precision', 'Recall',True Positive', 'False Positive', 'True Negative', 'False Negative']}
 
         Returns:
-            base_metric_df: the summary_df of metrics against time
-            mask_df: individual items_
+            base_metric_df: the summary_df of metrics against threshold (incremented)
+            mask_df: individual item mask
         """
 
         # the index= parameter is what makes this all work
@@ -81,8 +84,9 @@ class Dataview(Dataset): #TODO determine where to put queries
 
             
             # print(f"{status} length: {len(self.master_df[status_mask])}")
-            metric_df = self.threshold_range(self.master_df[status_mask], [status], np.linspace(0.5, 1, 51,True), [full_metrics[metric] for metric in metrics])
+            metric_df = self.threshold_range(self.master_df[status_mask], [status], threshold_linspace, [full_metrics[metric] for metric in metrics])
             base_metric_df = base_metric_df.join(metric_df)
+
 
 
         mask_df = self.master_df[full_mask]

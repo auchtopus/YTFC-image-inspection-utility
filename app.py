@@ -20,7 +20,7 @@ from src.views import Dataview
 from src.datasets import Metric
 import src.SessionState as ss
 from src.ConfirmButton import cache_on_button_press
-from src.scoring import ScoringSession
+# from src.scoring import ScoringSession
 from src.download_json import download_jsons
 
 password = os.environ.get('PASSWORD')
@@ -29,19 +29,12 @@ password = "ytfc"
 datasets = OrderedDict(
     [("-", None),
     ("Dataset 1", "./data/dataset_info/dataset_1.json"),
+    ("Dataset 1 - 06-05-retraining Test", "./data/dataset_info/dataset_1_2021_06_05.json"),
     ("Dataset 2 - scored subset", "./data/dataset_info/dataset_2.json"),
     ("Dataset 2 - full predictions", "./data/dataset_info/dataset_2_full.json"),
     ("Dataset 2 - 02-09-21 scored subset", "./data/dataset_info/dataset_2_02_09_21.json"),
-    ("Dataset 3", "./data/dataset_info/dataset_3.json")]
-)
-
-load_mask = OrderedDict(
-    [("-", None),
-    ("Dataset 1", False),
-    ("Dataset 2 - scored subset", False),
-    ("Dataset 2 - full predictions", False),
-    ("Dataset 2 - 02-09-21 scored subset", True),
-    ("Dataset 3", False)]
+    ("Dataset 3", "./data/dataset_info/dataset_3.json"),
+    ("Dataset 3 - full", "./data/dataset_info/dataset_3_2021_06_15.json")]
 )
 
 mode_list = ["Homepage", "Inspection"]

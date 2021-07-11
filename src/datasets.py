@@ -15,6 +15,10 @@ AWS_BUCKET_BASE = "https://ytfc.s3.us-east-2.amazonaws.com"
 
 
 class Metric:
+    """
+    computes a variety of metrics to be 
+
+    """
 
     # these should take cropped dataframes
     @staticmethod
@@ -304,10 +308,13 @@ class Dataset:
         df['catalog_number'] = df.index
         df['catalog_number'] = df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
         df.set_index('catalog_number', inplace=True)
+        df.to_csv("df_index.csv")
+        self.master_df.to_csv("master.csv")
+        # print(df.index, self.master_df.index)
         self.master_df = self.master_df.join(df, how="left")
-
+        print(f"{len(self.master_df)=}")
         unmatched_preds = df[~df.index.isin(self.master_df.index)].index
-        
+        print(f"{len(unmatched_preds)=}")
         retry = [pred_catalog_number for pred_catalog_number in unmatched_preds if len(pred_catalog_number) == 8]
         
         retry_df= df[df.index.isin(retry)]

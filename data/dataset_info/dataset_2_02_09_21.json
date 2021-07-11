@@ -1,0 +1,23 @@
+{
+    "name": "02_09_2021",
+    "base_schema": {"catalog_number":  "catalogNumber", 
+                    "url": "originalurl",
+                    "sci_name": "scientificName",
+                    "family": "family",
+                    "order": null,
+                    "inst": "institutionCode",
+                    "object_id": "occid",
+                    "state": "stateProvince",
+                    "event_date": "eventDate",
+                    "year": "year",
+                    "county": "county",
+                    "municipality": "municipality",
+                    "locality": "locality",
+                    "latitude": "decimalLatitude",
+                    "longitue": "decimalLongitude"},
+    "master_path": "./data/filter_master/02_09_2021_scoring.csv", 
+    "raw_master_path": "./data/master_datasets/NEVP_phenology_unscored_20191206.csv",
+    "status_list": ["Budding","Flowering", "Fruiting", "Reproductive"],
+    "orders": "./data/orders/dataset_2_orders.csv"
+
+}

@@ -1,0 +1,33 @@
+{
+    "name": "2021-06-15-dataset_3",
+    "base_schema": {
+        "catalog_number": "o.catalogNumber",
+        "url": "i.imageUrl",
+        "sci_name": "o.scientificName",
+        "family": "o.family",
+        "order": null,
+        "inst": "o.institutionCode",
+        "object_id": "o.CHN_id"
+    },
+    "master_path": "./data/filter_master/2021-06-15-dataset_3.csv",
+    "raw_master_path": "./data/master_datasets/ALL_families_2020-03-31-full_size_img.csv",
+    "status_list": [
+        "Budding",
+        "Flowering",
+        "Fruiting",
+        "Reproductive"
+    ],
+    "ground_truth": {
+        "Budding": "./data/ground_truth/dataset_3_gt.csv",
+        "Flowering": "./data/ground_truth/dataset_3_gt.csv",
+        "Fruiting": "./data/ground_truth/dataset_3_gt.csv",
+        "Reproductive": "./data/ground_truth/dataset_3_gt.csv"
+    },
+    "predictions": {
+        "Budding": "./data/predictions/dataset_3_full/aggregated_2021-06-15.csv",
+        "Flowering": "./data/predictions/dataset_3_full/aggregated_2021-06-15.csv",
+        "Fruiting": "./data/predictions/dataset_3_full/aggregated_2021-06-15.csv",
+        "Reproductive": "./data/predictions/dataset_3_full/aggregated_2021-06-15.csv"
+    },
+    "orders": "./data/orders/dataset_3_orders.csv"
+}
