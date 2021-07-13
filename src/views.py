@@ -39,7 +39,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
         # family filter
-        if query['family'] != ['All Families'] and len(query['family'])> 0:
+        if len(query['family'])> 1:
             mask = (mask) | (self.master_df["family"].isin(query["family"]))
         if query['family'] == ['All Families']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
@@ -47,7 +47,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
         # order filter
         # TODO: remove order as a necessary query step
-        if query['order'] != ['All Orders'] and len(query['order']) > 0:
+        if len(query['order']) > 1:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
         if query['order'] == ['All Orders']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
