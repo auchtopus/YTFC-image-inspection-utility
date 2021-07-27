@@ -10,7 +10,7 @@
         "object_id": "o.CHN_id"
     },
     "master_path": "./data/filter_master/2021-06-15-dataset_3.csv",
-    "raw_master_path": "./data/master_datasets/ALL_families_2020-03-31-full_size_img.csv",
+    "raw_master_path": "./data/master_datasets/ALL_families_2020-03-31.csv",
     "status_list": [
         "Budding",
         "Flowering",

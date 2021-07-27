@@ -2,8 +2,8 @@
 Processes datasets. Takes in the .json specifying the original scoring, ground truths for different statuses, normalizes names, binarizes scorings, and generates a singular output file 
 
 Usage:
-    process_dataset.py -h | --help
-    process_dataset.py add <json> [-go]
+    processing_dataset.py -h | --help
+    processing_dataset.py add <json> [-go]
 
 Options:
     -h --help                  Show help
@@ -32,6 +32,11 @@ def load_info(json_path: str) -> dict:
 
 
 if __name__ == "__main__":
+    """
+    Interface for dataset class to execute the merge and then drop rows with any N/A
+    
+    
+    """
     args = docopt(__doc__)
     dataset_info = load_info(args['<json>'])  # run from commandline 
     dataset = Dataset(dataset_info['status_list'], 
@@ -54,6 +59,8 @@ if __name__ == "__main__":
             dataset.merge_df(merge_gt_df)
         else:
             dataset.merge_df(preds_df)
+        print(len(dataset.master_df))
+        print(len(dataset.master_df.index.duplicated()))
         # st.dataframe(dataview.master_df.head(10))
         print(f"{len(dataset.master_df)=}")
     dataset.master_df.to_csv('intermediate.csv')

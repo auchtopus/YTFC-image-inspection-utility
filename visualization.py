@@ -102,8 +102,15 @@ if __name__ == "__main__":
     datasets_dict = load_all()
     datasets_dict.__delitem__("-")
     for k, v in datasets_dict.items():
+
+
+        # accuracy/capture graphs
         try:
             df = make_accuracy_recall_df(v, metrics = ['Accuracy %', 'Capture %'])
         except Exception as E:
             df = make_accuracy_recall_df(v, metrics = [ 'Capture %'])
         make_accuracy_recall_curve(k, df)
+
+
+        # composition graphs:
+        
