@@ -58,6 +58,19 @@ s3 = boto3.resource('s3')
 bucket = s3.Bucket(bucket_name)
 
 
+
+class AggFuncs:
+
+
+    def accuracy(df: pd.DataFrame, taxa_col, status) -> pd.Series:
+        """
+        computes the accuracy of each taxa for a certain status
+        """
+        pass
+
+    def capture(df: pd.DataFrame, taxa_col, status):
+        pass
+
 def load_all():
     """
     loads all the datasets into a dictionary of dataviews, keyed by values from the above ordereddict
@@ -107,6 +120,8 @@ def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
 
 
 
+
+
 def stats_by_taxa(df, taxa_col, stat_func_list: Dict[str, Callable]):
     """
     Computes statistics, grouped by taxa
@@ -142,6 +157,7 @@ def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
 
 
     if isinstance(truncate, int):
+
         
 
 
