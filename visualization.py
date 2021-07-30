@@ -42,7 +42,7 @@ datasets = OrderedDict(
      ("Dataset 2 - 02-09-21 scored subset",
       "./data/dataset_info/dataset_2_02_09_21.json"),
      ("Dataset 3", "./data/dataset_info/dataset_3.json"),
-     ("Dataset 3 - full", "./data/dataset_info/dataset_3_2021_06_15.json")]
+     ("Dataset 3 - full - old_model", "./data/dataset_info/dataset_3_2021_06_15.json")]
 )
 
 
@@ -103,17 +103,17 @@ def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
 
 
 
-def stats_by_taxa(df, taxa_col):
-    """
-    Computes statistics, grouped by taxa
+# def stats_by_taxa(df, taxa_col):
+#     """
+#     Computes statistics, grouped by taxa
 
-    :param: df: the dataframe
-    :param: taxa_col: the name of the column to use as the groupby
+#     :param: df: the dataframe
+#     :param: taxa_col: the name of the column to use as the groupby
 
 
-    """
-    groups = df.groupby(taxa_col).groups
-    grouped_df = df.DataFrame(index = groups)
+#     """
+#     groups = df.groupby(taxa_col).groups
+#     grouped_df = df.DataFrame(index = groups)
 
     # compute accuracy:
 
@@ -136,4 +136,3 @@ if __name__ == "__main__":
         df.to_csv(k)
 
         # composition graphs:
-        

@@ -37,9 +37,13 @@ def update_field(target_df: str, update_df: str, update_map: dict):
     update_df = update_df[[v for i,v in update_map.items()]]
 
     # dedup inputs
-    update_df_new_index = update_df.index.drop_duplicates()
-
-    update_df = update_df.loc[update_df_new_index, :]
+    print(len(update_df), len(target_df))
+    update_df = update_df.loc[~update_df.index.duplicated(keep='first')]
+    target_df = target_df.loc[~target_df.index.duplicated(keep="first")]
+    print(len(update_df), len(target_df))
+    print(len(target_df.index.duplicated()))
+    print(len(update_df.index.duplicated()))
+    # update_df = update_df.loc[update_df_new_index, :]
     # print(target_df.index.duplicated())
     # 2021-07-25: I think there's a bug in the update code
     # print(update_df.columns)
@@ -51,12 +55,10 @@ def update_field(target_df: str, update_df: str, update_map: dict):
     # update_df.index.drop_duplicates
     target_df.loc[target_df.index.duplicated(), :].to_csv("duplicates.csv")
 
-    assert len(set(target_df.index.duplicated())) == 1
-    assert len(set(update_df.index.duplicated())) == 1
 
     ## manually update:
 
-    target_df.update(update_df, errors = 'ignore')
+    target_df.update(update_df, overwrite = True, errors = 'ignore')
 
 
     target_df.to_csv('updated_family.csv')
@@ -64,7 +66,8 @@ def update_field(target_df: str, update_df: str, update_map: dict):
 
 def delete_entries(target_df, update_list):
     pruned_df =target_df.drop(update_list, errors = 'ignore')
-    pruned_df.to_csv('updated_2.csv')
+    pruned_df.index.name = "o.CNH_id"
+    pruned_df.to_csv('updated_3.csv')
 
 
 
@@ -77,9 +80,9 @@ if __name__ == "__main__":
         # update_path =sys.argv[2]
         delete_path = args["<delete_file>"]
 
-        target_df = pd.read_csv(target_path, index_col = 'catalog_number')
+        target_df = pd.read_csv(target_path, index_col = 'object_id')
         # update_df = pd.read_csv(update_path, index_col = 'o.catalogNumber')
-        delete_df = pd.read_csv(delete_path, index_col = 'catalogNumber')
+        delete_df = pd.read_csv(delete_path, index_col = 'occid')
         
         delete_list = delete_df.index.values
 
@@ -91,8 +94,8 @@ if __name__ == "__main__":
         target_path = args["<target_file>"]
         update_path = args["<update_file>"]
 
-        target_df = pd.read_csv(target_path, index_col = 'o.catalogNumber')
-        update_df = pd.read_csv(update_path, index_col = 'o.catalogNumber')
+        target_df = pd.read_csv(target_path, index_col = 'object_id')
+        update_df = pd.read_csv(update_path, index_col = 'o.CNH_id')
         # delete_df = pd.read_csv(delete_path, index_col = 'catalogNumber')
         
         # delete_list = delete_df.index.values

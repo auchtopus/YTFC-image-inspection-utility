@@ -11,8 +11,13 @@ class Dataview(Dataset): #TODO determine where to put queries
 
     def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str):
         super().__init__(status_list, label_map)
-        self.master_df = pd.read_csv(master_dataset_path, index_col = 'object_id')
+        try:
+            self.master_df = pd.read_csv(master_dataset_path, index_col = 'object_id')
+            print(f"{master_dataset_path} succeeded")
+        except ValueError:
+            self.master_df = pd.read_csv(master_dataset_path, index_col = 'o.CNH_id')
 
+            
         
     
     def summary_pd_query(self, query: dict, metrics: str, threshold_linspace: np.linspace = np.linspace(0.5, 1, 51,True)) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
@@ -41,7 +46,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         # family filter
         if len(query['family'])> 1:
             mask = (mask) | (self.master_df["family"].isin(query["family"]))
-        if query['family'] == ['All Families']:
+        elif query['family'] == ['All Families']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
 
 
@@ -49,7 +54,7 @@ class Dataview(Dataset): #TODO determine where to put queries
         # TODO: remove order as a necessary query step
         if len(query['order']) > 1:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
-        if query['order'] == ['All Orders']:
+        elif query['order'] == ['All Orders']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
 
 
