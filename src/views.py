@@ -13,12 +13,11 @@ class Dataview(Dataset): #TODO determine where to put queries
         super().__init__(status_list, label_map)
         try:
             self.master_df = pd.read_csv(master_dataset_path, index_col = 'object_id')
-            print(f"{master_dataset_path} succeeded")
+            
         except ValueError:
             self.master_df = pd.read_csv(master_dataset_path, index_col = 'o.CNH_id')
-
             
-        
+        print(f"{master_dataset_path} succeeded")
     
     def summary_pd_query(self, query: dict, metrics: str, threshold_linspace: np.linspace = np.linspace(0.5, 1, 51,True)) -> Tuple[pd.DataFrame, pd.DataFrame]: # gets numbers, not samples
         """

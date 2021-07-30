@@ -10,7 +10,7 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 import os
-
+from typing import Union,List, Callable, Dict
 
 import streamlit as st
 import pandas as pd
@@ -32,8 +32,7 @@ password = os.environ.get('PASSWORD')
 password = "ytfc"
 
 
-datasets = OrderedDict(
-    [("-", None),
+datasets = OrderedDict([
      ("Dataset 1", "./data/dataset_info/dataset_1.json"),
      ("Dataset 1 - 06-05-retraining Test",
       "./data/dataset_info/dataset_1_2021_06_05.json"),
@@ -64,14 +63,13 @@ def load_all():
     loads all the datasets into a dictionary of dataviews, keyed by values from the above ordereddict
     """
     def process_json(json_path):
-        try:
-            with open(json_path, 'r') as infile:
-                dataset_info = json.load(infile)
 
-            return Dataview(dataset_info['status_list'],
-                            dataset_info['base_schema'], dataset_info['master_path'])
-        except TypeError:
-            return None
+        with open(json_path, 'r') as infile:
+            dataset_info = json.load(infile)
+
+        return Dataview(dataset_info['status_list'],
+                        dataset_info['base_schema'], dataset_info['master_path'])
+
 
     return {k: process_json(v) for k,v in datasets.items()}
 
@@ -98,32 +96,60 @@ def make_accuracy_recall_df(dv: Dataview, metrics):
 
 
 def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
+    # statuses = ["Reproductive", "Flowering", "Fruiting", "Budding"]
     fig = px.line(df)
-    fig.write_html(f"{key}.html")
+    if not os.path.isdir(f"/Users/antonsquared/Projects/ytfc_image_utility/reports"):
+        os.path.makedirs(f"/Users/antonsquared/Projects/ytfc_image_utility/reports")
+    fig.write_html(f"./reports/{key}.html")
 
 
 
-# def stats_by_taxa(df, taxa_col):
-#     """
-#     Computes statistics, grouped by taxa
-
-#     :param: df: the dataframe
-#     :param: taxa_col: the name of the column to use as the groupby
 
 
-#     """
-#     groups = df.groupby(taxa_col).groups
-#     grouped_df = df.DataFrame(index = groups)
 
-    # compute accuracy:
+def stats_by_taxa(df, taxa_col, stat_func_list: Dict[str, Callable]):
+    """
+    Computes statistics, grouped by taxa
 
+    :param: df: the dataframe
+    :param: taxa_col: the name of the column to use as the groupby
+    :param stat__func_nlist: statistics to compute 
+
+    """ 
+    taxa_list = df.loc[:, taxa_col].unique()
+    stat_df = pd.DataFrame(index = taxa_list)
+    for status in status_list:
+        for func_name, func in stat_func_list.items(): 
+            stat_df.loc[:, f"{status} {func_name}"]  = func(stat_df)
+
+    
+
+
+def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
+    """
+    computes the quantities of the dataset by taxa
+
+    :param df: dataframe (either of scorings or raw data)
+    :param taxa_col: the column to use as taxa classification (this could be o.family or sci_name or order etc.)
+    :param truncate: if int: then accept this many labelled and then group the remaining taxa into "OTHER"
+                     if float (and less than 1): then use this as the threshold for inclusion in the "OTHER" column
+                     if bool and FALSE: no truncation
+                     as a consequence: floats greater than 1 and TRUE raise errors
+    
+    """
+    gp_df = df.groupby([taxa_col]).count()
+    gp_df.loc[:, "\% of total"] = gp_df.loc[:, taxa_col]/len(df) 
+
+
+    if isinstance(truncate, int):
+        
 
 
 
 
 if __name__ == "__main__":
     datasets_dict = load_all()
-    datasets_dict.__delitem__("-")
+    # datasets_dict.__delitem__("-")
     for k, v in datasets_dict.items():
 
 
@@ -133,6 +159,6 @@ if __name__ == "__main__":
         except Exception as E:
             df = make_accuracy_recall_df(v, metrics = [ 'Capture %'])
         make_accuracy_recall_curve(k, df)
-        df.to_csv(k)
+        
 
         # composition graphs:
