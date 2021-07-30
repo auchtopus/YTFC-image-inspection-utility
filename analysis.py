@@ -59,17 +59,6 @@ bucket = s3.Bucket(bucket_name)
 
 
 
-class AggFuncs:
-
-
-    def accuracy(df: pd.DataFrame, taxa_col, status) -> pd.Series:
-        """
-        computes the accuracy of each taxa for a certain status
-        """
-        pass
-
-    def capture(df: pd.DataFrame, taxa_col, status):
-        pass
 
 def load_all():
     """
@@ -116,30 +105,6 @@ def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
     fig.write_html(f"./reports/{key}.html")
 
 
-
-
-
-
-
-
-def stats_by_taxa(df, taxa_col, stat_func_list: Dict[str, Callable]):
-    """
-    Computes statistics, grouped by taxa
-
-    :param: df: the dataframe
-    :param: taxa_col: the name of the column to use as the groupby
-    :param stat__func_nlist: statistics to compute 
-
-    """ 
-    taxa_list = df.loc[:, taxa_col].unique()
-    stat_df = pd.DataFrame(index = taxa_list)
-    for status in status_list:
-        for func_name, func in stat_func_list.items(): 
-            stat_df.loc[:, f"{status} {func_name}"]  = func(stat_df)
-
-    
-
-
 def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
     """
     computes the quantities of the dataset by taxa
@@ -152,12 +117,22 @@ def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
                      as a consequence: floats greater than 1 and TRUE raise errors
     
     """
-    gp_df = df.groupby([taxa_col]).count()
-    gp_df.loc[:, "\% of total"] = gp_df.loc[:, taxa_col]/len(df) 
+    df['Counts'] = np.zeros(len(df))
+    gp_df = df.groupby([taxa_col])[taxa_col, "Counts"].count()
+    print(gp_df.head(3))
+    gp_df.loc[:, "\% of total"] = gp_df.loc[:, "Counts"]/len(df) 
 
 
     if isinstance(truncate, int):
-
+        raise NotImplementedError
+    elif isinstance(truncate, float):
+        truncate_df = gp_df[gp_df["\% of total"] > truncate]
+        truncate_df.loc["OTHER"] = {"family": np.NaN, "Counts": len(df) - len(truncate_df)}
+        return truncate_df
+    elif isinstance(truncate, bool):
+        return gp_df
+    else:
+        raise TypeError(f"{truncate} is of invalid type; the value for truncate must be a integer, float, or bool")
         
 
 
@@ -176,5 +151,24 @@ if __name__ == "__main__":
             df = make_accuracy_recall_df(v, metrics = [ 'Capture %'])
         make_accuracy_recall_curve(k, df)
         
+
+        # taxa stats
+        # try:
+        gp_df = taxa_count(v.master_df, "family", truncate = 0.02)
+        gp_df.to_csv(f"/Users/antonsquared/Projects/ytfc_image_utility/reports/{k}_summary_by_taxa.csv")
+        # except Exception as E:
+        #     print(f"dataset:{k} - gp_df")
+        #     print(E)
+
+
+        # stats by taxa
+        try:
+            stats_by_taxa_df = v.stats_by_taxa("family", status_list, metrics=['Accuracy %', 'Capture %', "Count"])
+        except KeyError as E:
+            print(f"dataset:{k} - stats_by_taxa")
+            print(E)
+            stats_by_taxa_df = v.stats_by_taxa("family", status_list, metrics=['Capture %', "Count"])
+        stats_by_taxa_df.to_csv(f"/Users/antonsquared/Projects/ytfc_image_utility/reports/{k}_stats_by_taxa.csv")
+
 
         # composition graphs:

@@ -347,7 +347,7 @@ class Dataset:
 
 
     @staticmethod
-    def threshold_single(df: pd.DataFrame, status: str, threshold: float, metrics: List[Tuple[Metric, dict]]) -> pd.DataFrame:
+    def threshold_single(df: pd.DataFrame, status: str, threshold: float, metrics: List[Tuple[Metric, dict]]) -> dict:
         df_filter = df[df[f'{status} Prediction Confidence'] >= threshold]
         metric_dict = {}
         for metric, params in metrics:

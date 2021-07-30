@@ -99,6 +99,42 @@ class Dataview(Dataset): #TODO determine where to put queries
         return base_metric_df, mask_df
 
 
+    def stats_by_taxa(self, taxa_col, status_list, metrics: List[str]):
+        """
+        Computes statistics, grouped by taxa
+
+        :param: df: the dataframe
+        :param: taxa_col: the name of the column to use as the groupby
+        :param stat__func_nlist: statistics to compute 
+
+        """ 
+        taxa_list = self.master_df.loc[:, taxa_col].unique()
+        taxa_result_list = []
+        for taxa in taxa_list:
+            taxa_df = self.master_df[self.master_df[taxa_col] == taxa]
+            status_dict = {}
+            for status in status_list:
+                original_length = len(taxa_df)
+                full_metrics = {"Accuracy %": (Metric.accuracy, {"status": status}),
+                        "Capture %": (Metric.capture, {"status": status, "original_length": original_length}),
+                        "Count": (Metric.count_samples,{"status": status}),
+                        # "F1 Score": (Metric.f1, {"status": status}),
+                        # "Precision": (Metric.precision, {"status": status}),
+                        # "Recall": (Metric.recall, {"status": status}),
+                        "Ground Truth Positive %": (Metric.percentage_valence, {"status": status, "valence": 0}),
+                        "Ground Truth Negative %":(Metric.percentage_valence, {"status": status, "valence": 1}),
+                        "Ground Truth Undetermined %": (Metric.percentage_valence, {"status": status, "valence": 2}),
+                        "True Positive %": (Metric.pred_type_percentage, {"status": str, "pred_valence": True, "gt_valence": True}),
+                        "False Positive %": (Metric.pred_type_percentage, {"status": str, "pred_valence": True, "gt_valence": False}),
+                        "False Negative %": (Metric.pred_type_percentage, {"status": str, "pred_valence": False, "gt_valence": True}),
+                        "True Negative %": (Metric.pred_type_percentage, {"status": str, "pred_valence": False, "gt_valence": False})}
+
+
+                status_dict.update(self.threshold_single(taxa_df, status, 0.95, [full_metrics[metric] for metric in metrics]))
+
+            taxa_result_list.append(status_dict)
+        return pd.DataFrame.from_records(taxa_result_list, index=taxa_list)
+    
 
 
     def sample_pd_query(self, df: pd.DataFrame, status_list: List[str], threshold: float) -> pd.DataFrame: # gets individual samples
