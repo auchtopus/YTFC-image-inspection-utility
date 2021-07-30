@@ -43,20 +43,23 @@ class Dataview(Dataset): #TODO determine where to put queries
 
 
         # family filter
-        if len(query['family'])> 1:
+        # print(query["family"])
+        # print(self.master_df[self.master_df["family"].isin(query["family"])])
+        if len(query['family'])>= 1:
             mask = (mask) | (self.master_df["family"].isin(query["family"]))
         elif query['family'] == ['All Families']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
 
+        # print(f"{Counter(mask)=}")
 
         # order filter
         # TODO: remove order as a necessary query step
-        if len(query['order']) > 1:
+        if len(query['order']) >= 1:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
         elif query['order'] == ['All Orders']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
 
-
+        # print(f"{Counter(mask)=}")
 
         base_metric_df = pd.DataFrame(index=np.linspace(0.5,1,51,True))
         
@@ -67,6 +70,7 @@ class Dataview(Dataset): #TODO determine where to put queries
             # status filter
             # print(f"{status} base mask: {Counter(mask)}")
             status_mask = (mask) & (self.master_df[f"{status} Prediction"].notnull())
+            # print(f"{Counter(status_mask)=}")
             # print(f"{status} status mask: {Counter(status_mask)}")
             full_mask = (full_mask) & (status_mask)
             original_length = Counter(status_mask)[True]
@@ -162,13 +166,20 @@ class Dataview(Dataset): #TODO determine where to put queries
         
     
         mask_df = df[mask]
-        status_cols = []
-        for status in status_list:
-            status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence", f"{status} Ground Truth"])
-        col_list = ["sci_name", "family", "order"] + status_cols
-        return mask_df[col_list]
-        
+        print(mask_df.columns)
 
+        try:
+            status_cols = []
+            for status in status_list:
+                status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence", f"{status} Ground Truth"])
+            col_list = ["sci_name", "family", "order"] + status_cols
+            return mask_df[col_list]
+        except KeyError:
+            status_cols = []
+            for status in status_list:
+                status_cols.extend([f"{status} Prediction", f"{status} Prediction Confidence"])
+            col_list = ["sci_name", "family", "order"] + status_cols
+            return mask_df[col_list]
 
 
         
