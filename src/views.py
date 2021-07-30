@@ -11,7 +11,7 @@ class Dataview(Dataset): #TODO determine where to put queries
 
     def __init__(self, status_list: List[str], label_map: dict, master_dataset_path: str):
         super().__init__(status_list, label_map)
-        self.master_df = pd.read_csv(master_dataset_path, index_col = 'catalog_number')
+        self.master_df = pd.read_csv(master_dataset_path, index_col = 'object_id')
 
         
     

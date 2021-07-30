@@ -76,6 +76,10 @@ def load_all():
     return {k: process_json(v) for k,v in datasets.items()}
 
 def make_accuracy_recall_df(dv: Dataview, metrics):
+    """
+    Compute statistics by family
+    
+    """
 
     # famil
     family_arr = pd.Series(dv.master_df['family'].unique(),dtype=object)
@@ -98,6 +102,25 @@ def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
     fig.write_html(f"{key}.html")
 
 
+
+def stats_by_taxa(df, taxa_col):
+    """
+    Computes statistics, grouped by taxa
+
+    :param: df: the dataframe
+    :param: taxa_col: the name of the column to use as the groupby
+
+
+    """
+    groups = df.groupby(taxa_col).groups
+    grouped_df = df.DataFrame(index = groups)
+
+    # compute accuracy:
+
+
+
+
+
 if __name__ == "__main__":
     datasets_dict = load_all()
     datasets_dict.__delitem__("-")
@@ -110,7 +133,7 @@ if __name__ == "__main__":
         except Exception as E:
             df = make_accuracy_recall_df(v, metrics = [ 'Capture %'])
         make_accuracy_recall_curve(k, df)
-
+        df.to_csv(k)
 
         # composition graphs:
         

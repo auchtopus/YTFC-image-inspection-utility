@@ -109,7 +109,8 @@ class Dataset:
                          "municipality": None,
                          "locality": None,
                          "latitude": None,
-                         "longitude": None}
+                         "longitude": None,
+                         "object_id": None}
         self.label_map.update(label_map)
         self.order_map = {}
         self.status_list = status_list
@@ -125,9 +126,10 @@ class Dataset:
             print(load_path)
             self.master_df = pd.read_csv(load_path)
         self.master_df.rename(columns = {v:k for k,v in self.label_map.items()},inplace=True)
+        self.master_df.loc[:, "object_id"] = self.master_df.loc[:, "object_id"].astype(int)
         # deduping because we use our own ground truth, and only need one version of every file
-        self.master_df.drop_duplicates(subset = ['catalog_number'], keep='first', inplace=True)
-        self.master_df.set_index('catalog_number', inplace = True)
+        self.master_df.drop_duplicates(subset = "object_id", keep='first', inplace=True)
+        self.master_df.set_index('object_id', inplace = True)
 
     
 
@@ -207,8 +209,8 @@ class Dataset:
         gt_status_list = [f"{status} Ground Truth" for status in status_list]
         return ground_truth_df[gt_status_list]
     
-    @staticmethod
-    def load_preds(pred_csv_path, status_list, binarized = False):
+
+    def load_preds(self, pred_csv_path, status_list, binarized = False):
         """
         Loads the predictions from pred_csv_path, binarizes the data, reindexes to catalog_number
 
@@ -218,7 +220,7 @@ class Dataset:
             binarized (boolean): boolean of whether the data is binarized
         
         pred_csv_path schema:
-            Filename: {catalog_number}.jpg
+            Filepath: {catalog_number}.jpg ##TODO: update this!
             {status} Status: TRUE/FALSE if binarized, {status}/Not_{status} if not binarized
             {status} status Confidence: float (>0.5)
             -- repeat for every status -- 
@@ -232,7 +234,9 @@ class Dataset:
 
         """
         pred_df = pd.read_csv(pred_csv_path)
-        
+        print(f"{len(pred_df)=}")
+        pred_df.rename(columns={self.label_map["object_id"]: "object_id"}, inplace=True)
+        pred_df.loc[:, "object_id"] = pred_df.loc[:, "object_id"].astype(int)
         pred_df.dropna(subset = ['Filepath'], inplace=True)
         def substitute(value):
             if "Not" in value:
@@ -246,9 +250,12 @@ class Dataset:
 
 
         # extract catalog number and reindex to catalog number
-        pred_df.loc[:, "Filename"] = pred_df['Filepath'].apply(lambda filepath: filepath.split('/')[-1])
-        pred_df.loc[:, 'catalog_number'] = pred_df['Filename'].apply(lambda filename: filename[:-4])
-        pred_df.set_index('catalog_number', inplace=True)
+        # pred_df.loc[:, "Filename"] = pred_df['Filepath'].apply(lambda filepath: filepath.split('/')[-1])
+        # pred_df.loc[:, 'catalog_number'] = pred_df['Filename'].apply(lambda filename: filename[:-4])
+        pred_df.set_index("object_id", inplace=True)
+        print(f"predrop {len(pred_df)=}")
+        pred_df = pred_df.loc[pred_df.index.drop_duplicates(keep="last"), :]
+        print(f"postdrop {len(pred_df)=}")
 
         pred_df.rename(columns=dict(zip([f"{status} Status Confidence" for status in status_list], [f"{status} Prediction Confidence" for status in status_list])), inplace=True)
 
@@ -301,10 +308,25 @@ class Dataset:
         return name
 
 
+    def merge_df_obj_id(self, df):
+        """
+        merges df onto master by object_id
+        
+        """
+        # print(df.head(3))
+        if df.index.name != "object_id":
+            df.set_index("object_id", inplace=True)
+        print(self.master_df.index.name,self.master_df.index.dtype, df.index.name, df.index.dtype)
+        self.master_df = self.master_df.join(df, how="left")
+        
+
     def merge_df(self, df):
         """
-        merges df onto master by catalog number
+        merges df onto master by object_id
+
+        2021-07-27: I think this was this complicated because the merge was translating catalogNumbers, which is generally a losing game
         """
+
         df['catalog_number'] = df.index
         df['catalog_number'] = df['catalog_number'].apply(lambda x: Dataset.parse_name(x))
         df.set_index('catalog_number', inplace=True)

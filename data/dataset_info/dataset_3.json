@@ -7,7 +7,7 @@
         "family": "o.family",
         "order": null,
         "inst": "o.institutionCode",
-        "object_id": "o.CHN_id"
+        "object_id": "o.CNH_id"
     },
     "master_path": "./data/filter_master/dataset_3.csv",
     "raw_master_path": "./data/master_datasets/ALL_families_2020-03-31.csv",

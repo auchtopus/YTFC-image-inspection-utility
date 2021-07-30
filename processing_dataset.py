@@ -46,25 +46,35 @@ if __name__ == "__main__":
         dataset.load_orders(dataset_info['orders'])
 
 
-
+    print(len(dataset.master_df.loc[dataset.master_df.index.duplicated(), :]))
     status_list = ["Budding", "Flowering", "Fruiting", "Reproductive"]
 
     # load all the statuses
-    for status in status_list:
-        preds_df = dataset.load_preds(dataset_info['predictions'][status], [status])
-        print(f"{len(preds_df)=}")
-        if args['--ground_truth']:
-            gt_df = dataset.load_gt(dataset_info['ground_truth'][status], [status])
-            merge_gt_df = preds_df.join(gt_df, how='inner')
-            dataset.merge_df(merge_gt_df)
-        else:
-            dataset.merge_df(preds_df)
-        print(len(dataset.master_df))
-        print(len(dataset.master_df.index.duplicated()))
-        # st.dataframe(dataview.master_df.head(10))
-        print(f"{len(dataset.master_df)=}")
+    # for status in status_list:
+    preds_df = dataset.load_preds(dataset_info['predictions']["Reproductive"], status_list)
+    print(f"{len(preds_df)=}")
+    if args['--ground_truth']:
+        gt_df = dataset.load_gt(dataset_info['ground_truth']["Reproductive"], status_list)
+        merge_gt_df = preds_df.join(gt_df, how='inner')
+        dataset.merge_df_obj_id(merge_gt_df)
+    else:
+        dataset.merge_df_obj_id(preds_df)
+    base_len = len(dataset.master_df)
+    dup_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep=False), :])
+    dup_idx_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep="first"), :])
+
+        
+
+    print(f"dedup_len: {base_len - dup_len + dup_idx_len}: {base_len}, {dup_len}, {dup_idx_len}")
+    # st.dataframe(dataview.master_df.head(10))
+
+    # TODO: dtermine why it's duplicating on every run
+    print(f"{len(dataset.master_df)=}")
     dataset.master_df.to_csv('intermediate.csv')
     out_df = dataset.master_df.dropna(axis=0, how='any', subset = [f"{status} Prediction" for status in status_list])
-    print(out_df.head(10))
+    # print(out_df.head(10))
+    print(f"{len(out_df)=}")
+    out_df.drop_duplicates(inplace = True)
+    print(out_df.head(3))
     print(f"{len(out_df)=}")
     out_df.to_csv(f"{dataset_info['name']}.csv")
