@@ -9,7 +9,7 @@
         "inst": "o.institutionCode",
         "object_id": "o.CNH_id" 
     },
-    "master_path": "./data/filter_master/2021-06-15-dataset_3.csv",
+    "master_path": "./data/filter_master/2021-06-15-dataset_3_old.csv",
     "raw_master_path": "./data/master_datasets/ALL_families_2020-03-31_dedup.csv",
     "status_list": [
         "Budding",
