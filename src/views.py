@@ -45,20 +45,22 @@ class Dataview(Dataset): #TODO determine where to put queries
         # family filter
         # print(query["family"])
         # print(self.master_df[self.master_df["family"].isin(query["family"])])
-        if len(query['family'])>= 1:
+        if len(query['family'])> 1:
             mask = (mask) | (self.master_df["family"].isin(query["family"]))
         elif query['family'] == ['All Families']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
-
+        elif len(query['family']) == 1:
+            mask = (mask) | (self.master_df["family"] == query['family'])
         # print(f"{Counter(mask)=}")
 
         # order filter
         # TODO: remove order as a necessary query step
-        if len(query['order']) >= 1:
+        if len(query['order']) > 1:
             mask = (mask) | (self.master_df["order"].isin(query["order"]))
         elif query['order'] == ['All Orders']:
             mask = pd.Series([True] * len(self.master_df), index = self.master_df.index)
-
+        elif len(query['order']) == 1:
+            mask = (mask) | (self.master_df["order"] == query['order'])
         # print(f"{Counter(mask)=}")
 
         base_metric_df = pd.DataFrame(index=np.linspace(0.5,1,51,True))
@@ -164,10 +166,10 @@ class Dataview(Dataset): #TODO determine where to put queries
         for status in status_list:
             mask = (mask) | (df[f"{status} Prediction Confidence"] > threshold)
         
-    
+        print(len(df))
         mask_df = df[mask]
         print(mask_df.columns)
-
+        print(f"len of mask_df: {len(mask_df)}")
         try:
             status_cols = []
             for status in status_list:

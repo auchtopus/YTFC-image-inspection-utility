@@ -32,16 +32,17 @@ password = os.environ.get('PASSWORD')
 password = "ytfc"
 
 
-datasets = OrderedDict([
+datasets = OrderedDict(
+    [("-", None),
     ("Dataset 1", "./data/dataset_info/dataset_1.json"),
-    ("Dataset 1 - 06-05-retraining Test",
-     "./data/dataset_info/dataset_1_2021_06_05.json"),
+    ("Dataset 1 - 06-05-retraining Test", "./data/dataset_info/dataset_1_2021_06_05.json"),
     ("Dataset 2 - scored subset", "./data/dataset_info/dataset_2.json"),
     ("Dataset 2 - full predictions", "./data/dataset_info/dataset_2_full.json"),
-    ("Dataset 2 - 02-09-21 scored subset",
-     "./data/dataset_info/dataset_2_02_09_21.json"),
+    ("Dataset 2 - 02-09-21 scored subset", "./data/dataset_info/dataset_2_02_09_21.json"),
     ("Dataset 3", "./data/dataset_info/dataset_3.json"),
-    ("Dataset 3 - full - old_model", "./data/dataset_info/dataset_3_2021_06_15.json")]
+    ("Dataset 3 - 2021-06-15", "./data/dataset_info/dataset_3_2021_06_15.json"),
+    ("Dataset 3 - 2021-07-26 (new model)", "./data/dataset_info/dataset_3_2021_07_26.json"),
+    ("Dataset 3 - 2021-08-31 (new model v2)", "./data/dataset_info/dataset_3_2021_08_31.json") ]
 )
 
 
@@ -73,6 +74,7 @@ STATUS_COLOR_MAP = {"Budding": "#ff7f0e",
 
 
 TITLE_MAP = {"Dataset 3 - full - old_model": "Capture percentages on taxa not represented in the Training set",
+            "Dataset 3 - new scoring": "Capture percentages on taxa not represented in the Training set, new model",
             "Dataset 1 - 06-05-retraining Test": "Accuracy and Capture on validation dataset"}
 
 status = None
@@ -208,12 +210,12 @@ def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
 if __name__ == "__main__":
     datasets_dict = load_all()
 
-    training_df = pd.read_csv("/Users/antonsquared/Projects/ytfc_image_utility/data/training_datasets/dataset_1_train.csv")
-    output_df = taxa_count(training_df, "family", 0.01)
-    output_df.drop(columns = ["family"], inplace=True)
-    output_df["\% of total"] = output_df["\% of total"] * 100
-    with open(f"dataset_1_training.tex", 'w') as out_tex:
-        out_tex.write(output_df.to_latex(float_format="%.2f"))
+    # training_df = pd.read_csv("/Users/antonsquared/Projects/ytfc_image_utility/data/training_datasets/dataset_1_train.csv")
+    # output_df = taxa_count(training_df, "family", 0.01)
+    # output_df.drop(columns = ["family"], inplace=True)
+    # output_df["\% of total"] = output_df["\% of total"] * 100
+    # with open(f"dataset_1_training.tex", 'w') as out_tex:
+    #     out_tex.write(output_df.to_latex(float_format="%.2f"))
 
 
     # datasets_dict.__delitem__("-")
@@ -232,7 +234,7 @@ if __name__ == "__main__":
         gp_df = taxa_count(v.master_df, "order", truncate=0.02)
         gp_df.to_csv(
             f"/Users/antonsquared/Projects/ytfc_image_utility/reports/{k}_summary_by_order.csv")
-        with open(f"{k}.tex", 'w') as out_tex:
+        with open(f"/Users/antonsquared/Projects/ytfc_image_utility/reports/{k}.tex", 'w') as out_tex:
             out_tex.write(gp_df.to_latex(float_format="%.2f"))
             
         # except Exception as E:

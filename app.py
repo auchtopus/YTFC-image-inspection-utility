@@ -34,7 +34,9 @@ datasets = OrderedDict(
     ("Dataset 2 - full predictions", "./data/dataset_info/dataset_2_full.json"),
     ("Dataset 2 - 02-09-21 scored subset", "./data/dataset_info/dataset_2_02_09_21.json"),
     ("Dataset 3", "./data/dataset_info/dataset_3.json"),
-    ("Dataset 3 - full", "./data/dataset_info/dataset_3_2021_06_15.json")]
+    ("Dataset 3 - 2021-06-15", "./data/dataset_info/dataset_3_2021_06_15.json"),
+    ("Dataset 3 - 2021-07-26 (new model)", "./data/dataset_info/dataset_3_2021_07_26.json"),
+    ("Dataset 3 - 2021-08-31 (new model v2)", "./data/dataset_info/dataset_3_2021_08_31.json") ]
 )
 
 mode_list = ["Homepage", "Inspection"]
