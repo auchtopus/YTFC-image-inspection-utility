@@ -47,21 +47,21 @@ if __name__ == "__main__":
 
 
     print(len(dataset.master_df.loc[dataset.master_df.index.duplicated(), :]))
-    status_list = ["Budding", "Flowering", "Fruiting", "Reproductive"]
+    status_list = dataset_info['status_list']
 
     # load all the statuses
-    # for status in status_list:
-    preds_df = dataset.load_preds(dataset_info['predictions']["Reproductive"], status_list)
-    print(f"{len(preds_df)=}")
-    if args['--ground_truth']:
-        gt_df = dataset.load_gt(dataset_info['ground_truth']["Reproductive"], status_list)
-        merge_gt_df = preds_df.join(gt_df, how='inner')
-        dataset.merge_df_obj_id(merge_gt_df)
-    else:
-        dataset.merge_df_obj_id(preds_df)
-    base_len = len(dataset.master_df)
-    dup_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep=False), :])
-    dup_idx_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep="first"), :])
+    for status in status_list:
+        preds_df = dataset.load_preds(dataset_info['predictions'][status], status_list)
+        print(f"{len(preds_df)=}")
+        if args['--ground_truth']:
+            gt_df = dataset.load_gt(dataset_info['ground_truth'][status], status_list)
+            merge_gt_df = preds_df.join(gt_df, how='inner')
+            dataset.merge_df_obj_id(merge_gt_df)
+        else:
+            dataset.merge_df_obj_id(preds_df)
+        base_len = len(dataset.master_df)
+        dup_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep=False), :])
+        dup_idx_len = len(dataset.master_df.loc[dataset.master_df.index.duplicated(keep="first"), :])
 
         
 

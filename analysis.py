@@ -10,6 +10,7 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 import os
+import sys
 from typing import Union, List, Callable, Dict
 
 import streamlit as st
@@ -33,8 +34,7 @@ password = "ytfc"
 
 
 datasets = OrderedDict(
-    [("-", None),
-    ("Dataset 1", "./data/dataset_info/dataset_1.json"),
+    [("Dataset 1", "./data/dataset_info/dataset_1.json"),
     ("Dataset 1 - 06-05-retraining Test", "./data/dataset_info/dataset_1_2021_06_05.json"),
     ("Dataset 2 - scored subset", "./data/dataset_info/dataset_2.json"),
     ("Dataset 2 - full predictions", "./data/dataset_info/dataset_2_full.json"),
@@ -84,20 +84,24 @@ bucket_name = "ytfc"
 s3 = boto3.resource('s3')
 bucket = s3.Bucket(bucket_name)
 
+def process_json(json_path):
 
+    with open(json_path, 'r') as infile:
+        dataset_info = json.load(infile)
+
+    return Dataview(dataset_info['status_list'],
+                    dataset_info['base_schema'], dataset_info['master_path'])
+    
+                    
 def load_all():
     """
     loads all the datasets into a dictionary of dataviews, keyed by values from the above ordereddict
     """
-    def process_json(json_path):
 
-        with open(json_path, 'r') as infile:
-            dataset_info = json.load(infile)
-
-        return Dataview(dataset_info['status_list'],
-                        dataset_info['base_schema'], dataset_info['master_path'])
 
     return {k: process_json(v) for k, v in datasets.items()}
+
+
 
 
 def make_accuracy_recall_df(dv: Dataview, metrics):
@@ -161,7 +165,7 @@ def make_accuracy_recall_curve(key: str, df: pd.DataFrame):
     try:
         key_title = TITLE_MAP[key]
     except KeyError:
-        key_title = None
+        key_title = key
     
     fig = px.line(long_df, x='Threshold Percent', y='Percentage', color='Measurement',
                   color_discrete_map=color_discrete_map, line_dash="Measurement", line_dash_map=line_dash_map,
@@ -208,7 +212,10 @@ def taxa_count(df, taxa_col, truncate: Union[int, float, bool]):
 
 
 if __name__ == "__main__":
-    datasets_dict = load_all()
+    if len(sys.argv) == 3:
+        datasets_dict = {sys.argv[1]: process_json(sys.argv[2])}
+    else:
+        datasets_dict = load_all()
 
     # training_df = pd.read_csv("/Users/antonsquared/Projects/ytfc_image_utility/data/training_datasets/dataset_1_train.csv")
     # output_df = taxa_count(training_df, "family", 0.01)
@@ -226,6 +233,7 @@ if __name__ == "__main__":
             df = make_accuracy_recall_df(
                 v, metrics=['Accuracy %', 'Capture %'])
         except Exception as E:
+            print("capture only!")
             df = make_accuracy_recall_df(v, metrics=['Capture %'])
         make_accuracy_recall_curve(k, df)
 
